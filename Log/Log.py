@@ -33,12 +33,11 @@ class Log:
         self.execute("create index if not exists log_id_key on log(id, key)")
 
     def insert(self, entries: typing.Iterable[tuple[datetime.datetime, int, str, str]]):
-        self.execute(
-            "insert into log(time, id, key, value) values "
-            + ",".join(
-                f"({e[0].timestamp()},{e[1]},'{e[2]}','{e[3]}')" for e in entries
+        for b in itertools.batched(entries, 10**5):
+            self.execute(
+                "insert into log(time, id, key, value) values "
+                + ",".join(f"({e[0].timestamp()},{e[1]},'{e[2]}','{e[3]}')" for e in b)
             )
-        )
 
     def select(
         self,
