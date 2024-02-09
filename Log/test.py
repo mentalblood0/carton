@@ -1,7 +1,7 @@
 import itertools
 import sqlite3
 
-import pytest_benchmark
+import pytest_benchmark.plugin
 
 from .Log import Log, Package
 
