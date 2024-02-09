@@ -5,17 +5,6 @@ import typing
 
 
 @dataclasses.dataclass
-class Package:
-    id: int
-    pairs: dict[str, typing.Any]
-
-    @property
-    def entries(self):
-        now = datetime.datetime.now()
-        return ((now, self.id, key, str(value)) for key, value in self.pairs.items())
-
-
-@dataclasses.dataclass
 class Log:
     execute: typing.Callable[[str], list[tuple[typing.Any, ...]]]
 
@@ -32,6 +21,11 @@ class Log:
         self.execute("create index if not exists log_value on log(value)")
         self.execute("create index if not exists log_id_key on log(id, key)")
 
+    @classmethod
+    def entries(cls, id: int, pairs: dict[str, typing.Any]):
+        now = datetime.datetime.now()
+        return ((now, id, key, str(value)) for key, value in pairs.items())
+
     def insert(self, entries: typing.Iterable[tuple[datetime.datetime, int, str, str]]):
         for b in itertools.batched(entries, 10**5):
             self.execute(
@@ -45,21 +39,27 @@ class Log:
         absent: dict[str, str | typing.Literal[True]],
         get: set[str],
     ):
-        return self.execute(
-            f"select * from log where "
-            + " and ".join(
-                itertools.chain(
-                    (
-                        f"id in (select id from log where key='{key}'"
-                        + (f" and value='{value}')" if value != True else ")")
-                        for key, value in present.items()
-                    ),
-                    (
-                        f"id not in (select id from log where key='{key}'"
-                        + (f" and value='{value}')" if value != True else ")")
-                        for key, value in absent.items()
-                    ),
-                    (f"key='{key}'" for key in get),
-                )
+        return [
+            {"id": id} | {row[2]: row[3] for row in sorted(group, key=lambda g: g[0])}
+            for id, group in itertools.groupby(
+                self.execute(
+                    "select * from log where "
+                    + " and ".join(
+                        itertools.chain(
+                            (
+                                f"id in (select id from log where key='{key}'"
+                                + (f" and value='{value}')" if value != True else ")")
+                                for key, value in present.items()
+                            ),
+                            (
+                                f"id not in (select id from log where key='{key}'"
+                                + (f" and value='{value}')" if value != True else ")")
+                                for key, value in absent.items()
+                            ),
+                            ["(" + " or ".join(f"key='{key}'" for key in get) + ")"],
+                        )
+                    )
+                ),
+                lambda row: row[1],
             )
-        )
+        ]
