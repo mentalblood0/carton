@@ -4,7 +4,7 @@ import sqlite3
 import pytest
 import pytest_benchmark.plugin
 
-from .Log import Log, Package
+from .Log import Log
 
 
 @pytest.fixture
@@ -14,28 +14,28 @@ def log():
 
 
 @pytest.mark.parametrize("amount", [10**n for n in range(6)])
-@pytest.mark.parametrize("selected_key_values_amount", [10**n for n in range(2)])
-@pytest.mark.parametrize("selected_items_amount", [10**n for n in range(2)])
 def test_benchmark_simple(
     log: Log,
     benchmark: pytest_benchmark.plugin.BenchmarkFixture,
     amount: int,
-    selected_key_values_amount: int,
-    selected_items_amount: int,
 ):
     log.insert(
         itertools.chain.from_iterable(
-            Package(
+            Log.entries(
                 i,
-                {"key": f"value_{i}"}
-                | {"file": f"path_{i}_{j}" for j in range(selected_key_values_amount)},
-            ).entries
+                {"key": f"value_{i}", "a": "b", "file": f"path_{i}"},
+            )
             for i in range(amount)
-            for _ in range(selected_items_amount)
         )
     )
 
+    def select():
+        for p in log.select({"key": f"value_{amount-1}"}, {}, {"file", "a"}):
+            assert "id" in p
+            assert "file" in p
+            assert "a" in p
+
     benchmark.pedantic(
-        lambda: log.select({"key": f"value_{amount}"}, {}, {"file"}),
+        select,
         iterations=1,
     )
