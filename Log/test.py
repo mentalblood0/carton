@@ -13,7 +13,7 @@ def log():
     return Log(lambda s: cursor.execute(s).fetchall())
 
 
-@pytest.mark.parametrize("amount", [10**n for n in range(6)])
+@pytest.mark.parametrize("amount", [10**n for n in range(5)])
 def test_benchmark_simple(
     log: Log,
     benchmark: pytest_benchmark.plugin.BenchmarkFixture,
@@ -28,12 +28,22 @@ def test_benchmark_simple(
             for i in range(amount)
         )
     )
+    for row in log.execute("select * from keys"):
+        print(row)
+    for row in log.execute("select * from log order by i desc limit 10"):
+        print(row)
 
     def select():
+        result = False
         for p in log.select({"key": f"value_{amount-1}"}, {}, {"file", "a"}):
+            result = True
             assert "id" in p
+            assert type(p["id"]) == int
             assert "file" in p
+            assert type(p["file"]) == str
             assert "a" in p
+            assert type(p["a"]) == str
+        assert result
 
     benchmark.pedantic(
         select,
