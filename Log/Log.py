@@ -1,5 +1,6 @@
 import dataclasses
 import datetime
+import functools
 import itertools
 import typing
 
@@ -7,8 +8,6 @@ import typing
 @dataclasses.dataclass
 class Log:
     execute: typing.Callable[[str], list[tuple[typing.Any, ...]]]
-    keys_ids: dict[str, int] = dataclasses.field(default_factory=dict)
-    ids_keys: dict[int, str] = dataclasses.field(default_factory=dict)
 
     def __post_init__(self):
         self.execute(
@@ -47,19 +46,16 @@ class Log:
                 + f"({e[0].timestamp()},{e[1]},{key_enum_id},'{e[3]}')"
             )
 
-    def key_id(self, key: str) -> int:
-        if not key in self.keys_ids:
-            id: int = self.execute(f"select i from keys where key='{key}'")[0][0]
-            self.keys_ids[key] = id
-            self.ids_keys[id] = key
-        return self.keys_ids[key]
+    def __hash__(self):
+        return hash(self.execute)
 
+    @functools.cache
+    def key_id(self, key: str) -> int:
+        return self.execute(f"select i from keys where key='{key}'")[0][0]
+
+    @functools.cache
     def id_key(self, id: int) -> str:
-        if not id in self.ids_keys:
-            key: str = self.execute(f"select key from keys where i={id}")[0][0]
-            self.keys_ids[key] = id
-            self.ids_keys[id] = key
-        return self.ids_keys[id]
+        return self.execute(f"select key from keys where i={id}")[0][0]
 
     def select(
         self,

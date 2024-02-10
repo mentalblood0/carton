@@ -13,7 +13,7 @@ def log():
     return Log(lambda s: cursor.execute(s).fetchall())
 
 
-@pytest.mark.parametrize("amount", [10**n for n in range(5)])
+@pytest.mark.parametrize("amount", [10**n for n in range(7)])
 def test_benchmark_simple(
     log: Log,
     benchmark: pytest_benchmark.plugin.BenchmarkFixture,
