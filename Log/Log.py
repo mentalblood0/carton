@@ -36,14 +36,13 @@ class Log:
         return ((now, id, key, str(value)) for key, value in pairs.items())
 
     def insert(self, entries: typing.Iterable[tuple[datetime.datetime, int, str, str]]):
-        for e in entries:
-            self.execute(
-                f"insert into keys(key) values ('{e[2]}') on conflict(key) do nothing"
-            )
-            key_enum_id = self.execute(f"select i from keys where key='{e[2]}'")[0][0]
+        for b in itertools.batched(entries, 10**5):
             self.execute(
                 "insert into log(time,id,key,value) values "
-                + f"({e[0].timestamp()},{e[1]},{key_enum_id},'{e[3]}')"
+                + ",".join(
+                    f"({e[0].timestamp()},{e[1]},{self.key_id(e[2])},'{e[3]}')"
+                    for e in b
+                )
             )
 
     def __hash__(self):
@@ -51,7 +50,13 @@ class Log:
 
     @functools.cache
     def key_id(self, key: str) -> int:
-        return self.execute(f"select i from keys where key='{key}'")[0][0]
+        while True:
+            try:
+                return self.execute(f"select i from keys where key='{key}'")[0][0]
+            except IndexError:
+                self.execute(
+                    f"insert into keys(key) values ('{key}') on conflict(key) do nothing"
+                )
 
     @functools.cache
     def id_key(self, id: int) -> str:
