@@ -10,16 +10,24 @@ class Log:
 
     def __post_init__(self):
         self.execute(
+            "create table if not exists keys("
+            "i integer primary key autoincrement,"
+            "key text unique)"
+        )
+        self.execute("create index if not exists keys_key on keys(key)")
+        self.execute(
             "create table if not exists log("
-            "time timestamp without timezone not null, "
-            "id bigint not null, "
-            "key varchar(32) not null, "
-            "value varchar(50))"
+            "i integer primary key autoincrement,"
+            "time timestamp without timezone not null,"
+            "id bigint not null,"
+            "key integer not null,"
+            "value text,"
+            "foreign key(key) references keys(i))"
         )
         self.execute("create index if not exists log_time on log(time)")
         self.execute("create index if not exists log_id on log(id)")
         self.execute("create index if not exists log_value on log(value)")
-        self.execute("create index if not exists log_id_key on log(id, key)")
+        self.execute("create index if not exists log_i_key on log(i, key)")
 
     @classmethod
     def entries(cls, id: int, pairs: dict[str, typing.Any]):
@@ -27,10 +35,14 @@ class Log:
         return ((now, id, key, str(value)) for key, value in pairs.items())
 
     def insert(self, entries: typing.Iterable[tuple[datetime.datetime, int, str, str]]):
-        for b in itertools.batched(entries, 10**5):
+        for e in entries:
             self.execute(
-                "insert into log(time, id, key, value) values "
-                + ",".join(f"({e[0].timestamp()},{e[1]},'{e[2]}','{e[3]}')" for e in b)
+                f"insert into keys(key) values ('{e[2]}') on conflict(key) do nothing"
+            )
+            key_enum_id = self.execute(f"select i from keys where key='{e[2]}'")[0][0]
+            self.execute(
+                "insert into log(time,id,key,value) values "
+                + f"({e[0].timestamp()},{e[1]},{key_enum_id},'{e[3]}')"
             )
 
     def select(
@@ -40,7 +52,7 @@ class Log:
         get: set[str],
     ):
         return [
-            {"id": id} | {row[2]: row[3] for row in sorted(group, key=lambda g: g[0])}
+            {"id": id} | {row[3]: row[4] for row in sorted(group, key=lambda g: g[0])}
             for id, group in itertools.groupby(
                 self.execute(
                     "select * from log where "
@@ -60,6 +72,6 @@ class Log:
                         )
                     )
                 ),
-                lambda row: row[1],
+                lambda row: row[2],
             )
         ]
