@@ -7,7 +7,7 @@ import typing
 @dataclasses.dataclass
 class Log:
     execute: typing.Callable[[str], typing.Any]
-    execute_for_enum: typing.Callable[[str], typing.Any]
+    execute_enum: typing.Callable[[str], typing.Any]
 
     def __post_init__(self):
         self.execute(
@@ -45,19 +45,16 @@ class Log:
 
     @functools.cache
     def key_id(self, key: str) -> int:
-        while True:
-            try:
-                return next(
-                    self.execute_for_enum(f"select i from keys where key='{key}'")
-                )[0]
-            except StopIteration:
-                self.execute_for_enum(
-                    f"insert into keys(key) values ('{key}') on conflict(key) do nothing"
-                )
+        try:
+            return next(self.execute_enum(f"select i from keys where key='{key}'"))[0]
+        except StopIteration:
+            return self.execute_enum(
+                f"insert into keys(key) values ('{key}') on conflict(key) do nothing returning *"
+            ).__next__()[0]
 
     @functools.cache
     def id_key(self, id: int) -> str:
-        return next(self.execute_for_enum(f"select key from keys where i={id}"))[0]
+        return next(self.execute_enum(f"select key from keys where i={id}"))[0]
 
     def select(
         self,
