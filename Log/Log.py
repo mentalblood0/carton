@@ -70,10 +70,10 @@ class Log:
     ):
         return [
             {"id": id}
-            | {self.id_key(row[3]): row[4] for row in sorted(group, key=lambda g: g[0])}
+            | {self.id_key(row[2]): row[3] for row in sorted(group, key=lambda g: g[0])}
             for id, group in itertools.groupby(
                 self.execute(
-                    "select * from log where "
+                    "select i,id,key,value from log where "
                     + " and ".join(
                         itertools.chain(
                             (
@@ -100,6 +100,6 @@ class Log:
                         )
                     )
                 ),
-                lambda row: row[2],
+                lambda row: row[1],
             )
         ]
