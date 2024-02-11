@@ -20,7 +20,7 @@ class Log:
             "create table if not exists log("
             "i integer primary key autoincrement,"
             "time datetime default(datetime('now')) not null,"
-            "id bigint not null,"
+            "id integer not null,"
             "key integer not null,"
             "value text,"
             "foreign key(key) references keys(i))"
