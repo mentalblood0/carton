@@ -49,7 +49,7 @@ class Log:
             return next(self.execute_enum(f"select i from keys where key='{key}'"))[0]
         except StopIteration:
             return self.execute_enum(
-                f"insert into keys(key) values ('{key}') on conflict(key) do nothing returning *"
+                f"insert into keys(key) values ('{key}') returning *"
             ).__next__()[0]
 
     @functools.cache
