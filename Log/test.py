@@ -9,8 +9,10 @@ from .Log import Log
 
 @pytest.fixture
 def log():
-    cursor = sqlite3.connect(":memory:").cursor()
-    return Log(lambda s: cursor.execute(s).fetchall())
+    connection = sqlite3.connect(":memory:")
+    cursor = connection.cursor()
+    cursor_for_enum = connection.cursor()
+    return Log(lambda s: cursor.execute(s), lambda s: cursor_for_enum.execute(s))
 
 
 @pytest.mark.parametrize("amount", [10**n for n in range(5)])
@@ -56,6 +58,6 @@ def test_groupby(log: Log):
     log.insert(Log.entries(1, {"c": "d", "x": "y"}))
     log.insert(Log.entries(0, {"e": "f", "x": "y"}))
     log.insert(Log.entries(1, {"g": "h", "x": "y"}))
-    result = log.select({"x": "y"})
+    result = list(log.select({"x": "y"}))
     assert {"id": 0, "a": "b", "e": "f", "x": "y"} in result
     assert {"id": 1, "c": "d", "g": "h", "x": "y"} in result

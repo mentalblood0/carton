@@ -7,7 +7,8 @@ import typing
 
 @dataclasses.dataclass
 class Log:
-    execute: typing.Callable[[str], list[tuple[typing.Any, ...]]]
+    execute: typing.Callable[[str], typing.Any]
+    execute_for_enum: typing.Callable[[str], typing.Any]
 
     def __post_init__(self):
         self.execute(
@@ -52,15 +53,17 @@ class Log:
     def key_id(self, key: str) -> int:
         while True:
             try:
-                return self.execute(f"select i from keys where key='{key}'")[0][0]
-            except IndexError:
-                self.execute(
+                return next(
+                    self.execute_for_enum(f"select i from keys where key='{key}'")
+                )[0]
+            except StopIteration:
+                self.execute_for_enum(
                     f"insert into keys(key) values ('{key}') on conflict(key) do nothing"
                 )
 
     @functools.cache
     def id_key(self, id: int) -> str:
-        return self.execute(f"select key from keys where i={id}")[0][0]
+        return next(self.execute_for_enum(f"select key from keys where i={id}"))[0]
 
     def select(
         self,
@@ -84,11 +87,10 @@ class Log:
         )
         if len(get):
             query += "and (" + " or ".join(f"key={self.key_id(k)}" for k in get) + ")"
-        return [
-            {"id": id}
-            | {self.id_key(row[2]): row[3] for row in sorted(group, key=lambda g: g[0])}
-            for id, group in itertools.groupby(
-                self.execute(query),
-                lambda row: row[1],
-            )
-        ]
+        current = {}
+        for row in self.execute(query + " order by id,i"):
+            if "id" in current and current["id"] != row[1]:
+                yield current
+                current = {}
+            current |= {"id": row[1], self.id_key(row[2]): row[3]}
+        yield current
