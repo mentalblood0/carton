@@ -68,38 +68,27 @@ class Log:
         absent: dict[str, str | typing.Literal[True]] = {},
         get: set[str] = set(),
     ):
+        query = "select i,id,key,value from log where " + " and ".join(
+            itertools.chain(
+                (
+                    f"id in (select id from log where key={self.key_id(key)}"
+                    + (f" and value='{value}')" if value != True else ")")
+                    for key, value in present.items()
+                ),
+                (
+                    f"id not in (select id from log where key={self.key_id(key)}"
+                    + (f" and value='{value}')" if value != True else ")")
+                    for key, value in absent.items()
+                ),
+            )
+        )
+        if len(get):
+            query += "and (" + " or ".join(f"key={self.key_id(k)}" for k in get) + ")"
         return [
             {"id": id}
             | {self.id_key(row[2]): row[3] for row in sorted(group, key=lambda g: g[0])}
             for id, group in itertools.groupby(
-                self.execute(
-                    "select i,id,key,value from log where "
-                    + " and ".join(
-                        itertools.chain(
-                            (
-                                f"id in (select id from log where key={self.key_id(key)}"
-                                + (f" and value='{value}')" if value != True else ")")
-                                for key, value in present.items()
-                            ),
-                            (
-                                f"id not in (select id from log where key={self.key_id(key)}"
-                                + (f" and value='{value}')" if value != True else ")")
-                                for key, value in absent.items()
-                            ),
-                            (
-                                [
-                                    "("
-                                    + " or ".join(
-                                        f"key={self.key_id(key)}" for key in get
-                                    )
-                                    + ")"
-                                ]
-                                if len(get)
-                                else []
-                            ),
-                        )
-                    )
-                ),
+                self.execute(query),
                 lambda row: row[1],
             )
         ]
