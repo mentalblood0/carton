@@ -1,5 +1,4 @@
 import dataclasses
-import datetime
 import functools
 import itertools
 import typing
@@ -20,7 +19,7 @@ class Log:
         self.execute(
             "create table if not exists log("
             "i integer primary key autoincrement,"
-            "time timestamp without timezone not null,"
+            "time datetime default(datetime('now')) not null,"
             "id bigint not null,"
             "key integer not null,"
             "value text,"
@@ -31,19 +30,14 @@ class Log:
         self.execute("create index if not exists log_value on log(value)")
         self.execute("create index if not exists log_i_key on log(i, key)")
 
-    @classmethod
-    def entries(cls, id: int, pairs: dict[str, typing.Any]):
-        now = datetime.datetime.now()
-        return ((now, id, key, str(value)) for key, value in pairs.items())
-
-    def insert(self, entries: typing.Iterable[tuple[datetime.datetime, int, str, str]]):
-        for b in itertools.batched(entries, 10**5):
+    def insert(self, packages: typing.Iterable[tuple[int, dict[str, str]]]):
+        for b in itertools.batched(
+            ((p[0], key, str(value)) for p in packages for key, value in p[1].items()),
+            10**5,
+        ):
             self.execute(
-                "insert into log(time,id,key,value) values "
-                + ",".join(
-                    f"({e[0].timestamp()},{e[1]},{self.key_id(e[2])},'{e[3]}')"
-                    for e in b
-                )
+                "insert into log(id,key,value) values "
+                + ",".join(f"({e[0]},{self.key_id(e[1])},'{e[2]}')" for e in b)
             )
 
     def __hash__(self):

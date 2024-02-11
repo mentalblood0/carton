@@ -1,4 +1,3 @@
-import itertools
 import sqlite3
 
 import pytest
@@ -22,13 +21,7 @@ def test_benchmark_simple(
     amount: int,
 ):
     log.insert(
-        itertools.chain.from_iterable(
-            Log.entries(
-                i,
-                {"key": f"value_{i}", "a": "b", "file": f"path_{i}"},
-            )
-            for i in range(amount)
-        )
+        (i, {"key": f"value_{i}", "a": "b", "file": f"path_{i}"}) for i in range(amount)
     )
     for row in log.execute("select * from keys"):
         print(row)
@@ -54,16 +47,16 @@ def test_benchmark_simple(
 
 
 def test_groupby(log: Log):
-    log.insert(Log.entries(0, {"a": "b", "x": "y"}))
-    log.insert(Log.entries(1, {"c": "d", "x": "y"}))
-    log.insert(Log.entries(0, {"e": "f", "x": "y"}))
-    log.insert(Log.entries(1, {"g": "h", "x": "y"}))
+    log.insert([(0, {"a": "b", "x": "y"})])
+    log.insert([(1, {"c": "d", "x": "y"})])
+    log.insert([(0, {"e": "f", "x": "y"})])
+    log.insert([(1, {"g": "h", "x": "y"})])
     result = list(log.select({"x": "y"}))
     assert {"id": 0, "a": "b", "e": "f", "x": "y"} in result
     assert {"id": 1, "c": "d", "g": "h", "x": "y"} in result
 
 
 def test_distinct(log: Log):
-    log.insert(Log.entries(0, {"a": "b", "x": "y"}))
-    log.insert(Log.entries(0, {"a": "c", "x": "y"}))
+    log.insert([(0, {"a": "b", "x": "y"})])
+    log.insert([(0, {"a": "c", "x": "y"})])
     assert next(log.select({"x": "y"}))["a"] == "c"
