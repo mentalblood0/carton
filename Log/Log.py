@@ -65,8 +65,8 @@ class Log:
     def select(
         self,
         present: dict[str, str | typing.Literal[True]],
-        absent: dict[str, str | typing.Literal[True]],
-        get: set[str],
+        absent: dict[str, str | typing.Literal[True]] = {},
+        get: set[str] = set(),
     ):
         return [
             {"id": id}
@@ -86,11 +86,17 @@ class Log:
                                 + (f" and value='{value}')" if value != True else ")")
                                 for key, value in absent.items()
                             ),
-                            [
-                                "("
-                                + " or ".join(f"key={self.key_id(key)}" for key in get)
-                                + ")"
-                            ],
+                            (
+                                [
+                                    "("
+                                    + " or ".join(
+                                        f"key={self.key_id(key)}" for key in get
+                                    )
+                                    + ")"
+                                ]
+                                if len(get)
+                                else []
+                            ),
                         )
                     )
                 ),
