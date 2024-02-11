@@ -61,3 +61,9 @@ def test_groupby(log: Log):
     result = list(log.select({"x": "y"}))
     assert {"id": 0, "a": "b", "e": "f", "x": "y"} in result
     assert {"id": 1, "c": "d", "g": "h", "x": "y"} in result
+
+
+def test_distinct(log: Log):
+    log.insert(Log.entries(0, {"a": "b", "x": "y"}))
+    log.insert(Log.entries(0, {"a": "c", "x": "y"}))
+    assert next(log.select({"x": "y"}))["a"] == "c"
