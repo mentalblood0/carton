@@ -32,12 +32,6 @@ class Log:
 
     def insert(self, packages: typing.Iterable[tuple[int | None, dict[str, str]]]):
         buf = []
-
-        def execute_buffer():
-            if buf:
-                self.execute(f"insert into log(id,key,value) values" + ",".join(buf))
-                buf.clear()
-
         for p in packages:
             if not p[1]:
                 continue
@@ -51,7 +45,7 @@ class Log:
                     "returning id"
                 ).__next__()[0]
                 buf.extend(f"({id},{self.key_id(r[1])},'{r[2]}')" for r in rows[1:])
-        execute_buffer()
+        self.execute(f"insert into log(id,key,value) values" + ",".join(buf))
 
     def __hash__(self):
         return hash(self.execute)
