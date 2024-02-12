@@ -46,7 +46,6 @@ class Log:
                     f"({p[0]},{self.key_id(k)},'{v}')" for k, v in p[1].items()
                 )
             else:
-                execute_buffer()
                 rows = [(p[0], k, str(v)) for k, v in p[1].items()]
                 id = self.execute(
                     f"insert into log(id,key,value) values "

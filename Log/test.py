@@ -15,7 +15,22 @@ def log():
 
 
 @pytest.mark.parametrize("amount", [10**n for n in range(5)])
-def test_benchmark_simple(
+def test_benchmark_insert(
+    log: Log,
+    benchmark: pytest_benchmark.plugin.BenchmarkFixture,
+    amount: int,
+):
+    def insert(log):
+        log.insert(
+            (None if i % 2 else i, {"key": f"value_{i}", "a": "b", "file": f"path_{i}"})
+            for i in range(amount)
+        )
+
+    benchmark.pedantic(insert, iterations=1, args = (log,))
+
+
+@pytest.mark.parametrize("amount", [10**n for n in range(5)])
+def test_benchmark_select(
     log: Log,
     benchmark: pytest_benchmark.plugin.BenchmarkFixture,
     amount: int,
