@@ -21,12 +21,9 @@ def test_benchmark_simple(
     amount: int,
 ):
     log.insert(
-        (i, {"key": f"value_{i}", "a": "b", "file": f"path_{i}"}) for i in range(amount)
+        (None if i % 2 else i, {"key": f"value_{i}", "a": "b", "file": f"path_{i}"})
+        for i in range(amount)
     )
-    for row in log.execute("select * from keys"):
-        print(row)
-    for row in log.execute("select * from log order by i desc limit 10"):
-        print(row)
 
     def select():
         result = False
@@ -47,8 +44,8 @@ def test_benchmark_simple(
 
 
 def test_groupby(log: Log):
-    log.insert([(0, {"a": "b", "x": "y"})])
-    log.insert([(1, {"c": "d", "x": "y"})])
+    log.insert([(None, {"a": "b", "x": "y"})])
+    log.insert([(None, {"c": "d", "x": "y"})])
     log.insert([(0, {"e": "f", "x": "y"})])
     log.insert([(1, {"g": "h", "x": "y"})])
     result = list(log.select({"x": "y"}))
@@ -57,6 +54,6 @@ def test_groupby(log: Log):
 
 
 def test_distinct(log: Log):
-    log.insert([(0, {"a": "b", "x": "y"})])
+    log.insert([(None, {"a": "b", "x": "y"})])
     log.insert([(0, {"a": "c", "x": "y"})])
     assert next(log.select({"x": "y"}))["a"] == "c"

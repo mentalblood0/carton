@@ -30,15 +30,34 @@ class Log:
         self.execute("create index if not exists log_value on log(value)")
         self.execute("create index if not exists log_i_key on log(i, key)")
 
-    def insert(self, packages: typing.Iterable[tuple[int, dict[str, str]]]):
-        for b in itertools.batched(
-            ((p[0], key, str(value)) for p in packages for key, value in p[1].items()),
-            10**5,
-        ):
-            self.execute(
-                "insert into log(id,key,value) values "
-                + ",".join(f"({e[0]},{self.key_id(e[1])},'{e[2]}')" for e in b)
-            )
+    def insert(self, packages: typing.Iterable[tuple[int | None, dict[str, str]]]):
+        buffer = []
+
+        def execute_buffer():
+            if buffer:
+                self.execute(f"insert into log(id,key,value) values" + ",".join(buffer))
+                buffer.clear()
+
+        for p in packages:
+            if not p[1]:
+                continue
+            if p[0] is not None:
+                buffer.extend(
+                    f"({p[0]},{self.key_id(k)},'{v}')" for k, v in p[1].items()
+                )
+            else:
+                execute_buffer()
+                rows = [(p[0], k, str(v)) for k, v in p[1].items()]
+                id = self.execute(
+                    f"insert into log(id,key,value) values "
+                    f"(coalesce((select max(id) from log), -1) + 1,{self.key_id(rows[0][1])},'{rows[0][2]}')"
+                    "returning id"
+                ).__next__()[0]
+                self.execute(
+                    f"insert into log(id,key,value) values "
+                    + ",".join(f"({id},{self.key_id(r[1])},'{r[2]}')" for r in rows[1:])
+                )
+        execute_buffer()
 
     def __hash__(self):
         return hash(self.execute)
@@ -62,7 +81,7 @@ class Log:
         absent: dict[str, str | typing.Literal[True]] = {},
         get: set[str] = set(),
     ):
-        query = "select i,id,key,value from log where " + " and ".join(
+        query = "select id,key,value from log where " + " and ".join(
             itertools.chain(
                 (
                     f"id in (select id from log where key={self.key_id(key)}"
@@ -76,12 +95,12 @@ class Log:
                 ),
             )
         )
-        if len(get):
+        if get:
             query += "and (" + " or ".join(f"key={self.key_id(k)}" for k in get) + ")"
         current = {}
         for row in self.execute(query + " order by id,i"):
-            if "id" in current and current["id"] != row[1]:
+            if "id" in current and current["id"] != row[0]:
                 yield current
                 current = {}
-            current |= {"id": row[1], self.id_key(row[2]): row[3]}
+            current |= {"id": row[0], self.id_key(row[1]): row[2]}
         yield current
