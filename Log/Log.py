@@ -37,14 +37,14 @@ class Log:
             if p[0] is not None:
                 buf.extend(f"({p[0]},{self.key_id(k)},'{v}')" for k, v in p[1].items())
             else:
-                rows = [(p[0], k, str(v)) for k, v in p[1].items()]
+                k_v = list(p[1].items())
                 p_id = self.execute(
-                    f"insert into log(package,key,value)values"
-                    f"(coalesce((select max(package)from log),-1)+1,{self.key_id(rows[0][1])},'{rows[0][2]}')"
+                    "insert into log(package,key,value)values"
+                    f"(coalesce((select max(package)from log),-1)+1,{self.key_id(k_v[0][0])},'{k_v[0][1]}')"
                     "returning package"
                 ).__next__()[0]
-                buf.extend(f"({p_id},{self.key_id(r[1])},'{r[2]}')" for r in rows[1:])
-        self.execute(f"insert into log(package,key,value)values" + ",".join(buf))
+                buf.extend(f"({p_id},{self.key_id(e[0])},'{e[1]}')" for e in k_v[1:])
+        self.execute("insert into log(package,key,value)values" + ",".join(buf))
 
     @functools.cache
     def key_id(self, key: str) -> int:
