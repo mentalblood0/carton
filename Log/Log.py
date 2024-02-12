@@ -52,9 +52,8 @@ class Log:
                     f"(coalesce((select max(id) from log), -1) + 1,{self.key_id(rows[0][1])},'{rows[0][2]}')"
                     "returning id"
                 ).__next__()[0]
-                self.execute(
-                    f"insert into log(id,key,value) values "
-                    + ",".join(f"({id},{self.key_id(r[1])},'{r[2]}')" for r in rows[1:])
+                buffer.append(
+                    ",".join(f"({id},{self.key_id(r[1])},'{r[2]}')" for r in rows[1:])
                 )
         execute_buffer()
 
