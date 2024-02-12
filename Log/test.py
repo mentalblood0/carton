@@ -26,7 +26,7 @@ def test_benchmark_insert(
             for i in range(amount)
         )
 
-    benchmark.pedantic(insert, iterations=1, args = (log,))
+    benchmark.pedantic(insert, iterations=1, args=(log,))
 
 
 @pytest.mark.parametrize("amount", [10**n for n in range(5)])
@@ -44,8 +44,8 @@ def test_benchmark_select(
         result = False
         for p in log.select({"key": f"value_{amount-1}"}, {}, {"file", "a"}):
             result = True
-            assert "id" in p
-            assert type(p["id"]) == int
+            assert "package" in p
+            assert type(p["package"]) == int
             assert "file" in p
             assert type(p["file"]) == str
             assert "a" in p
@@ -64,8 +64,8 @@ def test_groupby(log: Log):
     log.insert([(0, {"e": "f", "x": "y"})])
     log.insert([(1, {"g": "h", "x": "y"})])
     result = list(log.select({"x": "y"}))
-    assert {"id": 0, "a": "b", "e": "f", "x": "y"} in result
-    assert {"id": 1, "c": "d", "g": "h", "x": "y"} in result
+    assert {"package": 0, "a": "b", "e": "f", "x": "y"} in result
+    assert {"package": 1, "c": "d", "g": "h", "x": "y"} in result
 
 
 def test_distinct(log: Log):
