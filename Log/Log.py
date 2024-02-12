@@ -31,20 +31,18 @@ class Log:
         self.execute("create index if not exists log_i_key on log(i, key)")
 
     def insert(self, packages: typing.Iterable[tuple[int | None, dict[str, str]]]):
-        buffer = []
+        buf = []
 
         def execute_buffer():
-            if buffer:
-                self.execute(f"insert into log(id,key,value) values" + ",".join(buffer))
-                buffer.clear()
+            if buf:
+                self.execute(f"insert into log(id,key,value) values" + ",".join(buf))
+                buf.clear()
 
         for p in packages:
             if not p[1]:
                 continue
             if p[0] is not None:
-                buffer.extend(
-                    f"({p[0]},{self.key_id(k)},'{v}')" for k, v in p[1].items()
-                )
+                buf.extend(f"({p[0]},{self.key_id(k)},'{v}')" for k, v in p[1].items())
             else:
                 rows = [(p[0], k, str(v)) for k, v in p[1].items()]
                 id = self.execute(
@@ -52,9 +50,7 @@ class Log:
                     f"(coalesce((select max(id) from log), -1) + 1,{self.key_id(rows[0][1])},'{rows[0][2]}')"
                     "returning id"
                 ).__next__()[0]
-                buffer.append(
-                    ",".join(f"({id},{self.key_id(r[1])},'{r[2]}')" for r in rows[1:])
-                )
+                buf.extend(f"({id},{self.key_id(r[1])},'{r[2]}')" for r in rows[1:])
         execute_buffer()
 
     def __hash__(self):
