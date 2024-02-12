@@ -7,6 +7,8 @@ import typing
 class Log:
     execute: typing.Callable[[str], typing.Any]
     execute_enum: typing.Callable[[str], typing.Any]
+    integer: str = "integer"
+    now: str = "datetime('now')"
 
     def __post_init__(self):
         self.execute(
@@ -17,9 +19,9 @@ class Log:
         self.execute("create index if not exists keys_key on keys(key)")
         self.execute(
             "create table if not exists log("
-            "id integer primary key autoincrement,"
-            "time datetime default(datetime('now')) not null,"
-            "package integer not null,"
+            f"id {self.integer} primary key autoincrement,"
+            f"time datetime default({self.now}) not null,"
+            f"package {self.integer} not null,"
             "key integer not null,"
             "value text,"
             "foreign key(key) references keys(id))"
