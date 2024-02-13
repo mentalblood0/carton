@@ -6,15 +6,15 @@ import pytest_benchmark.plugin
 from .Log import Log
 
 
-@pytest.fixture
+@pytest.fixture()
 def log():
     connection = sqlite3.connect(":memory:")
     cursor = connection.cursor()
     cursor_for_enum = connection.cursor()
     return Log(
-        lambda s: cursor.execute(s),
-        lambda s, d: cursor.executemany(s, d),
-        lambda s, d=(): cursor_for_enum.execute(s, d),
+        execute=lambda s, d: cursor.execute(s, d),
+        executemany=lambda s, d: cursor.executemany(s, d),
+        execute_enum=lambda s, d=(): cursor_for_enum.execute(s, d),
     )
 
 
@@ -25,10 +25,7 @@ def test_benchmark_insert(
     amount: int,
 ):
     def insert(log):
-        log.insert(
-            (None if i % 2 else i, {"key": f"value_{i}", "a": "b", "file": f"path_{i}"})
-            for i in range(amount)
-        )
+        log.insert((None if i % 2 else i, {"key": f"value_{i}", "a": "b", "file": f"path_{i}"}) for i in range(amount))
 
     benchmark.pedantic(insert, iterations=1, args=(log,))
 
@@ -39,21 +36,18 @@ def test_benchmark_select(
     benchmark: pytest_benchmark.plugin.BenchmarkFixture,
     amount: int,
 ):
-    log.insert(
-        (None if i % 2 else i, {"key": f"value_{i}", "a": "b", "file": f"path_{i}"})
-        for i in range(amount)
-    )
+    log.insert((None if i % 2 else i, {"key": f"value_{i}", "a": "b", "file": f"path_{i}"}) for i in range(amount))
 
     def select():
         result = False
         for p in log.select({"key": f"value_{amount-1}"}, {}, {"file", "a"}):
             result = True
             assert "package" in p
-            assert type(p["package"]) == int
+            assert isinstance(p["package"], int)
             assert "file" in p
-            assert type(p["file"]) == str
+            assert isinstance(p["file"], str)
             assert "a" in p
-            assert type(p["a"]) == str
+            assert isinstance(p["a"], str)
         assert result
 
     benchmark.pedantic(
