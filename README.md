@@ -33,7 +33,7 @@ with indexes on
 Additional one used for keys dynamic enum implementation:
 
 - `id` is just autoincrementing primary key
-- `key` explicit key representation
+- `key` is explicit key representation
 
 with index on `key`
 
