@@ -33,14 +33,14 @@ with indexes on
 Additional one used for keys dynamic enum implementation:
 
 - `id` is just autoincrementing primary key
-- `key` explicity key representation
+- `key` explicit key representation
 
 with index on `key`
 
 So `select` operation implemented as taking
 
 - `present` - dictionary of key/value pairs presented in packages
-- `absent` - dictionary key/value pairs not presented in packages
+- `absent` - dictionary of key/value pairs not presented in packages
 - `get` - set of key/value pairs to get
 
 and generating dictionaries each of `package` and `get` contained keys
