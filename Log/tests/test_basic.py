@@ -12,9 +12,9 @@ def log():
     cursor = connection.cursor()
     cursor_for_enum = connection.cursor()
     return Log(
-        execute=lambda s, d: cursor.execute(s, d),
-        executemany=lambda s, d: cursor.executemany(s, d),
-        execute_enum=lambda s, d=(): cursor_for_enum.execute(s, d),
+        execute=cursor.execute,
+        executemany=cursor.executemany,
+        execute_enum=cursor_for_enum.execute,
     )
 
 

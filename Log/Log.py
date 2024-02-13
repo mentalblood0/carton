@@ -1,4 +1,5 @@
 import dataclasses
+import operator
 import typing
 
 
@@ -32,7 +33,7 @@ class Log:
 
     def insert(self, packages: typing.Iterable[tuple[int | None, dict[str, str]]]):
         buf = []
-        for p in filter(lambda p: p[1], packages):
+        for p in filter(operator.itemgetter(1), packages):
             if p[0] is not None:
                 buf.extend((p[0], self.key_id(k), v) for k, v in p[1].items())
             else:
