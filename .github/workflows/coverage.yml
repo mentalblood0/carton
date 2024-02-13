@@ -27,5 +27,5 @@ jobs:
           python -m pip install --upgrade pip pytest coverage
       - name: Test with pytest and check coverage
         run: |
-          coverage run -m pytest tests
+          coverage run -m pytest
           coverage report -m --skip-covered --sort=cover --fail-under=100
