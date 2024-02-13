@@ -3,7 +3,7 @@ import sqlite3
 import pytest
 import pytest_benchmark.plugin
 
-from .Log import Log
+from ..Log import Log
 
 
 @pytest.fixture()
