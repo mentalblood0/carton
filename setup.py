@@ -4,11 +4,11 @@ import setuptools
 
 if __name__ == "__main__":
     setuptools.setup(
-        name="log",
+        name="carton",
         version="0.1.0",
         python_requires=">=3.11",
         keywords=["data-processing"],
-        url="https://github.com/MentalBlood/log",
+        url="https://github.com/MentalBlood/carton",
         description="Core for log driven data processing applications",
         long_description=(pathlib.Path(__file__).parent / "README.md").read_text(),
         long_description_content_type="text/markdown",
