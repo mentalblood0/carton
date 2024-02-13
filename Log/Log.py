@@ -6,7 +6,10 @@ import typing
 @dataclasses.dataclass(unsafe_hash=True)
 class Log:
     execute: typing.Callable[[str], typing.Any]
-    execute_enum: typing.Callable[[str], typing.Any]
+    executemany: typing.Callable[
+        [str, typing.Iterable[tuple[typing.Any, ...]]], typing.Any
+    ]
+    execute_enum: typing.Callable[[str, tuple[typing.Any, ...]], typing.Any]
     integer: str = "integer"
     now: str = "datetime('now')"
 
@@ -35,28 +38,34 @@ class Log:
         buf = []
         for p in filter(lambda p: p[1], packages):
             if p[0] is not None:
-                buf.extend(f"({p[0]},{self.key_id(k)},'{v}')" for k, v in p[1].items())
+                buf.extend((p[0], self.key_id(k), v) for k, v in p[1].items())
             else:
                 k_v = list(p[1].items())
-                p_id = self.execute(
+                p_id = self.executemany(
                     "insert into log(package,key,value)values"
-                    f"(coalesce((select max(package)from log),-1)+1,{self.key_id(k_v[0][0])},'{k_v[0][1]}')"
-                    "returning package"
+                    "(coalesce((select max(package)from log),-1)+1,?,?)returning package",
+                    [
+                        (
+                            self.key_id(k_v[0][0]),
+                            k_v[0][1],
+                        )
+                    ],
                 ).__next__()[0]
-                buf.extend(f"({p_id},{self.key_id(e[0])},'{e[1]}')" for e in k_v[1:])
-        self.execute("insert into log(package,key,value)values" + ",".join(buf))
+                buf.extend((p_id, self.key_id(e[0]), e[1]) for e in k_v[1:])
+        self.executemany("insert into log(package,key,value)values(?,?,?)", buf)
 
     @functools.cache
     def key_id(self, key: str) -> int:
-        if result := list(self.execute_enum(f"select id from keys where key='{key}'")):
+        result = list(self.execute_enum(f"select id from keys where key=?", (key,)))
+        if result:
             return result[0][0]
         return next(
-            self.execute_enum(f"insert into keys(key)values('{key}')returning *")
+            self.execute_enum(f"insert into keys(key)values(?)returning *", (key,))
         )[0]
 
     @functools.cache
     def id_key(self, id: int) -> str:
-        return next(self.execute_enum(f"select key from keys where id={id}"))[0]
+        return next(self.execute_enum(f"select key from keys where id=?", (id,)))[0]
 
     def select(
         self,

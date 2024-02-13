@@ -11,7 +11,11 @@ def log():
     connection = sqlite3.connect(":memory:")
     cursor = connection.cursor()
     cursor_for_enum = connection.cursor()
-    return Log(lambda s: cursor.execute(s), lambda s: cursor_for_enum.execute(s))
+    return Log(
+        lambda s: cursor.execute(s),
+        lambda s, d: cursor.executemany(s, d),
+        lambda s, d=(): cursor_for_enum.execute(s, d),
+    )
 
 
 @pytest.mark.parametrize("amount", [10**n for n in range(5)])
