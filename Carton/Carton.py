@@ -5,21 +5,21 @@ import typing
 
 @dataclasses.dataclass(unsafe_hash=True, frozen=True, kw_only=True)
 class Carton:
-    execute: typing.Callable[[str, tuple[typing.Any, ...]], typing.Any]
-    executemany: typing.Callable[[str, typing.Iterable[tuple[typing.Any, ...]]], typing.Any]
-    execute_enum: typing.Callable[[str, tuple[typing.Any, ...]], typing.Any]
+    execute: typing.Callable[[], typing.Callable[[str, tuple[typing.Any, ...]], typing.Any]]
+    executemany: typing.Callable[[], typing.Callable[[str, list[tuple[typing.Any, ...]]], typing.Any]]
     integer: str = "integer"
     now: str = "datetime('now')"
     key_id_cache: dict[str, int] = dataclasses.field(default_factory=dict)
     id_key_cache: dict[int, str] = dataclasses.field(default_factory=dict)
 
     def __post_init__(self):
-        self.execute(
+        execute = self.execute()
+        execute(
             "create table if not exists keys(id integer primary key autoincrement,key text unique)",
             (),
         )
-        self.execute("create index if not exists keys_key on keys(key)", ())
-        self.execute(
+        execute("create index if not exists keys_key on keys(key)", ())
+        execute(
             "create table if not exists carton("
             f"id {self.integer} primary key autoincrement,"
             f"time datetime default({self.now}) not null,"
@@ -29,19 +29,20 @@ class Carton:
             "foreign key(key) references keys(id))",
             (),
         )
-        self.execute("create index if not exists carton_time on carton(time)", ())
-        self.execute("create index if not exists carton_package on carton(package)", ())
-        self.execute("create index if not exists carton_value on carton(value)", ())
-        self.execute("create index if not exists carton_id_key on carton(id,key)", ())
+        execute("create index if not exists carton_time on carton(time)", ())
+        execute("create index if not exists carton_package on carton(package)", ())
+        execute("create index if not exists carton_value on carton(value)", ())
+        execute("create index if not exists carton_id_key on carton(id,key)", ())
 
     def insert(self, packages: typing.Iterable[tuple[int | None, dict[str, str]]]):
+        execute = self.execute()
         buf = []
         for p in filter(operator.itemgetter(1), packages):
             if p[0] is not None:
                 buf.extend((p[0], self.key_id(k), v) for k, v in p[1].items())
             else:
                 k_v = list(p[1].items())
-                p_id = self.execute(
+                p_id = execute(
                     "insert into carton(package,key,value)values(coalesce((select max(package)from carton),-1)+1,?,?)"
                     "returning package",
                     (
@@ -50,19 +51,20 @@ class Carton:
                     ),
                 ).__next__()[0]
                 buf.extend((p_id, self.key_id(e[0]), e[1]) for e in k_v[1:])
-        self.executemany("insert into carton(package,key,value)values(?,?,?)", buf)
+        self.executemany()("insert into carton(package,key,value)values(?,?,?)", buf)
 
     def key_id(self, key: str) -> int:
         if key not in self.key_id_cache:
+            execute = self.execute()
             try:
-                self.key_id_cache[key] = next(self.execute_enum("select id from keys where key=?", (key,)))[0]
+                self.key_id_cache[key] = next(execute("select id from keys where key=?", (key,)))[0]
             except StopIteration:
-                self.key_id_cache[key] = next(self.execute_enum("insert into keys(key)values(?)returning *", (key,)))[0]
+                self.key_id_cache[key] = next(execute("insert into keys(key)values(?)returning *", (key,)))[0]
         return self.key_id_cache[key]
 
     def id_key(self, i: int) -> str:
         if i not in self.id_key_cache:
-            self.id_key_cache[i] = next(self.execute_enum("select key from keys where id=?", (i,)))[0]
+            self.id_key_cache[i] = next(self.execute()("select key from keys where id=?", (i,)))[0]
         return self.id_key_cache[i]
 
     def select(
@@ -80,7 +82,7 @@ class Carton:
         if get:
             query += "and(" + " or ".join(f"key={self.key_id(k)}" for k in get) + ")"
         current = {}
-        for row in self.execute(query + "order by package,id", ()):
+        for row in self.execute()(query + "order by package,id", ()):
             if "package" in current and current["package"] != row[0]:
                 yield current
                 current = {}

@@ -9,12 +9,9 @@ from ..Carton import Carton
 @pytest.fixture()
 def carton():
     connection = sqlite3.connect(":memory:")
-    cursor = connection.cursor()
-    cursor_for_enum = connection.cursor()
     return Carton(
-        execute=cursor.execute,
-        executemany=cursor.executemany,
-        execute_enum=cursor_for_enum.execute,
+        execute=lambda: connection.cursor().execute,
+        executemany=lambda: connection.cursor().executemany,
     )
 
 
