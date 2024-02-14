@@ -13,6 +13,8 @@
 
 Simple and reliable approach for data processing system storage
 
+### Basic concepts
+
 It uses two tables:
 
 Main one:
@@ -43,4 +45,14 @@ So `select` operation implemented as taking
 - `absent` - dictionary of key/value pairs not presented in packages
 - `get` - set of key/value pairs to get
 
-and generating dictionaries each of `package` and `get` contained keys
+and returning dictionaries each of `package` and `get` contained keys
+
+### Some implementation details
+
+`select` method implemented as generator avoiding excessive memory usage
+
+`insert` method uses `N + 1` `execute` related calls where `N` is number of packages with no package identifier provided
+
+There is no need to generate package identifier `package` as it taken to be `COALESCE((SELECT MAX(package) FROM carton), -1) + 1` by default
+
+`key` enum related transformations implemented using non-invalidating cache
