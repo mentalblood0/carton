@@ -20,7 +20,7 @@ class Carton:
         )
         self.execute("create index if not exists keys_key on keys(key)", ())
         self.execute(
-            "create table if not exists log("
+            "create table if not exists carton("
             f"id {self.integer} primary key autoincrement,"
             f"time datetime default({self.now}) not null,"
             f"package {self.integer} not null,"
@@ -29,10 +29,10 @@ class Carton:
             "foreign key(key) references keys(id))",
             (),
         )
-        self.execute("create index if not exists log_time on log(time)", ())
-        self.execute("create index if not exists log_package on log(package)", ())
-        self.execute("create index if not exists log_value on log(value)", ())
-        self.execute("create index if not exists log_id_key on log(id,key)", ())
+        self.execute("create index if not exists carton_time on carton(time)", ())
+        self.execute("create index if not exists carton_package on carton(package)", ())
+        self.execute("create index if not exists carton_value on carton(value)", ())
+        self.execute("create index if not exists carton_id_key on carton(id,key)", ())
 
     def insert(self, packages: typing.Iterable[tuple[int | None, dict[str, str]]]):
         buf = []
@@ -42,7 +42,7 @@ class Carton:
             else:
                 k_v = list(p[1].items())
                 p_id = self.execute(
-                    "insert into log(package,key,value)values(coalesce((select max(package)from log),-1)+1,?,?)"
+                    "insert into carton(package,key,value)values(coalesce((select max(package)from carton),-1)+1,?,?)"
                     "returning package",
                     (
                         self.key_id(k_v[0][0]),
@@ -50,7 +50,7 @@ class Carton:
                     ),
                 ).__next__()[0]
                 buf.extend((p_id, self.key_id(e[0]), e[1]) for e in k_v[1:])
-        self.executemany("insert into log(package,key,value)values(?,?,?)", buf)
+        self.executemany("insert into carton(package,key,value)values(?,?,?)", buf)
 
     def key_id(self, key: str) -> int:
         if key not in self.key_id_cache:
@@ -71,8 +71,8 @@ class Carton:
         absent: dict[str, str | typing.Literal[True]] | None = None,
         get: set[str] | None = None,
     ):
-        query = "select package,key,value from log where " + " and ".join(
-            f"package {clause} (select package from log where key={self.key_id(key)}"
+        query = "select package,key,value from carton where " + " and ".join(
+            f"package {clause} (select package from carton where key={self.key_id(key)}"
             + (f" and value='{value}')" if value is not True else ")")
             for clause, d in (("in", present), ("not in", absent))
             for key, value in (d or {}).items()

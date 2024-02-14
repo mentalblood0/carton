@@ -7,7 +7,7 @@ from ..Carton import Carton
 
 
 @pytest.fixture()
-def log():
+def carton():
     connection = sqlite3.connect(":memory:")
     cursor = connection.cursor()
     cursor_for_enum = connection.cursor()
@@ -20,12 +20,12 @@ def log():
 
 @pytest.mark.parametrize("amount", [10**n for n in range(5)])
 def test_benchmark_insert(
-    log: Carton,
+    carton: Carton,
     benchmark: pytest_benchmark.plugin.BenchmarkFixture,
     amount: int,
 ):
     benchmark.pedantic(
-        lambda: log.insert(
+        lambda: carton.insert(
             (None if i % 2 else i, {"key": f"value_{i}", "a": "b", "file": f"path_{i}"}) for i in range(amount)
         ),
         iterations=1,
@@ -34,19 +34,19 @@ def test_benchmark_insert(
 
 @pytest.mark.parametrize("amount", [10**n for n in range(5)])
 def test_benchmark_select(
-    log: Carton,
+    carton: Carton,
     benchmark: pytest_benchmark.plugin.BenchmarkFixture,
     amount: int,
 ):
-    log.insert((None if i % 2 else i, {"key": f"value_{i}", "a": "b", "file": f"path_{i}"}) for i in range(amount))
+    carton.insert((None if i % 2 else i, {"key": f"value_{i}", "a": "b", "file": f"path_{i}"}) for i in range(amount))
 
     benchmark.pedantic(
-        lambda: list(log.select({"key": f"value_{amount-1}"}, {}, {"file", "a"})),
+        lambda: list(carton.select({"key": f"value_{amount-1}"}, {}, {"file", "a"})),
         iterations=1,
     )
 
     result = False
-    for p in log.select({"key": f"value_{amount-1}"}, {}, {"file", "a"}):
+    for p in carton.select({"key": f"value_{amount-1}"}, {}, {"file", "a"}):
         result = True
         assert "package" in p
         assert isinstance(p["package"], int)
@@ -57,18 +57,18 @@ def test_benchmark_select(
     assert result
 
 
-def test_groupby(log: Carton):
-    log.insert([(None, {"a": "b", "x": "y"})])
-    log.insert([(None, {"c": "d", "x": "y"})])
-    log.insert([(0, {"e": "f", "x": "y"})])
-    log.insert([(1, {"g": "h", "x": "y"})])
-    result = list(log.select({"x": "y"}))
+def test_groupby(carton: Carton):
+    carton.insert([(None, {"a": "b", "x": "y"})])
+    carton.insert([(None, {"c": "d", "x": "y"})])
+    carton.insert([(0, {"e": "f", "x": "y"})])
+    carton.insert([(1, {"g": "h", "x": "y"})])
+    result = list(carton.select({"x": "y"}))
     assert {"package": 0, "a": "b", "e": "f", "x": "y"} in result
     assert {"package": 1, "c": "d", "g": "h", "x": "y"} in result
-    assert list(log.select({"x": "y"})) == list(log.select({"x": "y"}, get={"package", "a", "e", "c", "g", "x"}))
+    assert list(carton.select({"x": "y"})) == list(carton.select({"x": "y"}, get={"package", "a", "e", "c", "g", "x"}))
 
 
-def test_distinct(log: Carton):
-    log.insert([(None, {"a": "b", "x": "y"})])
-    log.insert([(0, {"a": "c", "x": "y"})])
-    assert next(log.select({"x": "y"}))["a"] == "c"
+def test_distinct(carton: Carton):
+    carton.insert([(None, {"a": "b", "x": "y"})])
+    carton.insert([(0, {"a": "c", "x": "y"})])
+    assert next(carton.select({"x": "y"}))["a"] == "c"
