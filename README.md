@@ -57,7 +57,7 @@ There is no need to generate package identifier `package` as it taken to be `COA
 
 `key` enum related transformations implemented using non-invalidating cache
 
-### Copared to [conveyor](https://github.com/MentalBlood/conveyor)?
+### Compared to [conveyor](https://github.com/MentalBlood/conveyor)
 
 |                               |                  carton |                                         conveyor |
 | ----------------------------- | ----------------------: | -----------------------------------------------: |
