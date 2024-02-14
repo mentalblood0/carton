@@ -59,17 +59,18 @@ There is no need to generate package identifier `package` as it taken to be `COA
 
 ### Compared to [conveyor](https://github.com/MentalBlood/conveyor)
 
-|                               |                  carton |                                         conveyor |
-| ----------------------------- | ----------------------: | -----------------------------------------------: |
-| lines of code                 |                      90 |                                             2610 |
-| core classes amount           |                       1 |                                               27 |
-| storage type                  | SQL-compatible database | SQL-compatible database or files or user-defined |
-| workers concept               |           semi-immanent |                                              yes |
-| automatic migrations          |              not needed |                                              yes |
-| update operation              |              not needed |                                              yes |
-| delete operation              |                      no |                                              yes |
-| entity properties limit       | maximum `integer` value |                           maximum columns amount |
-| reserving                     |                      no |                                              yes |
-| logging                       |                immanent |                              sedondary, optional |
-| identifiers generation side   |                database |                                          library |
-| cross-repository transactions |              not needed |                                              yes |
+|                                          |                  carton |                                         conveyor |
+| ---------------------------------------- | ----------------------: | -----------------------------------------------: |
+| lines of code                            |                      90 |                                             2610 |
+| core classes amount                      |                       1 |                                               27 |
+| storage type                             | SQL-compatible database | SQL-compatible database or files or user-defined |
+| workers concept                          |           semi-immanent |                                              yes |
+| automatic migrations                     |              not needed |                                              yes |
+| update operation                         |              not needed |                                              yes |
+| delete operation                         |                      no |                                              yes |
+| entity properties limit (when using RDB) | maximum `integer` value |                           maximum columns amount |
+| reserving                                |                      no |                                              yes |
+| logging                                  |                immanent |                              secondary, optional |
+| current time obtaining side              |                database |                                          library |
+| identifiers generation side              |                database |                                          library |
+| cross-repository transactions            |              not needed |                                              yes |
