@@ -43,13 +43,13 @@ So `select` operation implemented as taking
 
 - `present` - dictionary of key/value pairs presented in packages
 - `absent` - dictionary of key/value pairs not presented in packages
-- `get` - set of key/value pairs to get
+- `get` - set of key of key/value pairs to get
 
 and returning dictionaries each of `package` and `get` contained keys
 
 ### Some implementation details
 
-`select` method implemented as generator avoiding excessive memory usage
+`select` method is implemented as generator avoiding excessive memory usage
 
 `insert` method uses `N + 1` `execute` related calls where `N` is number of packages with no package identifier provided
 
