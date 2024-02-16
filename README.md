@@ -43,7 +43,7 @@ So `select` operation implemented as taking
 
 - `present` - dictionary of key/value pairs presented in packages
 - `absent` - dictionary of key/value pairs not presented in packages
-- `get` - set of key of key/value pairs to get
+- `get` - set of keys of key/value pairs to get
 
 and returning dictionaries each of `package` and `get` contained keys
 
