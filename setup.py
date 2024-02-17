@@ -5,8 +5,8 @@ import setuptools
 if __name__ == "__main__":
     setuptools.setup(
         name="carton",
-        version="0.1.0",
-        python_requires=">=3.11",
+        version="0.2.0",
+        python_requires=">=3.7",
         keywords=["data-processing"],
         url="https://github.com/MentalBlood/carton",
         description="Core for log driven data processing applications",
@@ -20,6 +20,11 @@ if __name__ == "__main__":
             "Typing :: Typed",
             "Topic :: System :: Logging",
             "Operating System :: OS Independent",
+            "Programming Language :: Python :: 3",
+            "Programming Language :: Python :: 3.7",
+            "Programming Language :: Python :: 3.8",
+            "Programming Language :: Python :: 3.9",
+            "Programming Language :: Python :: 3.10",
             "Programming Language :: Python :: 3.11",
             "Programming Language :: Python :: 3.12",
             "License :: OSI Approved :: BSD License",
