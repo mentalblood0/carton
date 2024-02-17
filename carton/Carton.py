@@ -14,10 +14,7 @@ class Carton:
 
     def __post_init__(self):
         execute = self.execute()
-        execute(
-            "create table if not exists keys(id integer primary key autoincrement,key text unique)",
-            (),
-        )
+        execute("create table if not exists keys(id integer primary key autoincrement,key text unique)", ())
         execute("create index if not exists keys_key on keys(key)", ())
         execute(
             "create table if not exists carton("
@@ -45,10 +42,7 @@ class Carton:
                 p_id = execute(
                     "insert into carton(package,key,value)values(coalesce((select max(package)from carton),-1)+1,?,?)"
                     "returning package",
-                    (
-                        self.key_id(k_v[0][0]),
-                        k_v[0][1],
-                    ),
+                    (self.key_id(k_v[0][0]), k_v[0][1]),
                 ).__next__()[0]
                 buf.extend((p_id, self.key_id(e[0]), e[1]) for e in k_v[1:])
         self.executemany()("insert into carton(package,key,value)values(?,?,?)", buf)
