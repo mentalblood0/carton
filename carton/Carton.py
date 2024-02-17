@@ -3,14 +3,14 @@ import operator
 import typing
 
 
-@dataclasses.dataclass(unsafe_hash=True, frozen=True, kw_only=True)
+@dataclasses.dataclass(frozen=True)
 class Carton:
-    execute: typing.Callable[[], typing.Callable[[str, tuple[typing.Any, ...]], typing.Any]]
-    executemany: typing.Callable[[], typing.Callable[[str, list[tuple[typing.Any, ...]]], typing.Any]]
+    execute: typing.Callable[[], typing.Callable[[str, typing.Tuple[typing.Any, ...]], typing.Any]]
+    executemany: typing.Callable[[], typing.Callable[[str, typing.List[typing.Tuple[typing.Any, ...]]], typing.Any]]
     integer: str = "integer"
     now: str = "datetime('now')"
-    key_id_cache: dict[str, int] = dataclasses.field(default_factory=dict)
-    id_key_cache: dict[int, str] = dataclasses.field(default_factory=dict)
+    key_id_cache: typing.Dict[str, int] = dataclasses.field(default_factory=dict)
+    id_key_cache: typing.Dict[int, str] = dataclasses.field(default_factory=dict)
 
     def __post_init__(self):
         execute = self.execute()
@@ -31,7 +31,7 @@ class Carton:
         execute("create index if not exists carton_value on carton(value)", ())
         execute("create index if not exists carton_id_key on carton(id,key)", ())
 
-    def insert(self, packages: typing.Iterable[tuple[int | None, dict[str, str]]]):
+    def insert(self, packages: typing.Iterable[typing.Tuple[typing.Union[int, None], typing.Dict[str, str]]]):
         execute = self.execute()
         buf = []
         for p in filter(operator.itemgetter(1), packages):
@@ -63,9 +63,9 @@ class Carton:
 
     def select(
         self,
-        present: dict[str, str | typing.Literal[True]],
-        absent: dict[str, str | typing.Literal[True]] | None = None,
-        get: set[str] | None = None,
+        present: typing.Dict[str, typing.Union[str, bool]],
+        absent: typing.Union[typing.Dict[str, typing.Union[str, bool]], None] = None,
+        get: typing.Union[typing.Set[str], None] = None,
     ):
         query = "select package,key,value from carton where " + " and ".join(
             f"package {clause} (select package from carton where key={self.key_id(key)}"
@@ -75,10 +75,10 @@ class Carton:
         )
         if get:
             query += "and(" + " or ".join(f"key={self.key_id(k)}" for k in get) + ")"
-        current = {}
+        current: typing.Dict[str, typing.Union[str, int]] = {}
         for row in self.execute()(query + "order by package,id", ()):
             if "package" in current and current["package"] != row[0]:
                 yield current
                 current = {}
-            current |= {"package": row[0], self.id_key(row[1]): row[2]}
+            current.update({"package": row[0], self.id_key(row[1]): row[2]})
         yield current
