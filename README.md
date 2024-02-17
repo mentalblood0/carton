@@ -9,7 +9,7 @@
 <a href="https://github.com/MentalBlood/carton/blob/master/.github/workflows/tests.yml"><img alt="Tests Status" src="https://github.com/MentalBlood/carton/actions/workflows/tests.yml/badge.svg"></a>
 <a href="https://github.com/MentalBlood/carton/blob/master/.github/workflows/coverage.yml"><img alt="Coverage Status" src="https://github.com/MentalBlood/carton/actions/workflows/coverage.yml/badge.svg"></a>
 <a href="https://github.com/psf/black"><img alt="Code style: black" src="https://img.shields.io/badge/code%20style-black-000000.svg"></a>
-<a href="https://docs.python.org/3.7"><img alt="Python version: >=3.7" src="https://img.shields.io/badge/Python-3.7+-00AA00.svg"></a>
+<a href="https://docs.python.org/3.7"><img alt="Python version: >=3.7" src="https://img.shields.io/badge/Python->=3.7-00AA00.svg"></a>
 </p>
 
 Simple and reliable approach for data processing system storage
