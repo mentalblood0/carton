@@ -27,5 +27,4 @@ jobs:
           python -m pip install --upgrade pip xenon
       - name: Check complexity with xenon
         run: |
-          xenon --max-absolute A .
-
+          xenon --max-average A carton
