@@ -49,11 +49,10 @@ class Carton:
 
     def key_id(self, key: str) -> int:
         if key not in self.key_id_cache:
-            execute = self.execute()
             try:
-                self.key_id_cache[key] = next(execute("select id from keys where key=?", (key,)))[0]
+                self.key_id_cache[key] = next(self.execute()("select id from keys where key=?", (key,)))[0]
             except StopIteration:
-                self.key_id_cache[key] = next(execute("insert into keys(key)values(?)returning *", (key,)))[0]
+                self.key_id_cache[key] = next(self.execute()("insert into keys(key)values(?)returning *", (key,)))[0]
         return self.key_id_cache[key]
 
     def id_key(self, i: int) -> str:
@@ -73,9 +72,8 @@ class Carton:
             for clause, d in (("in", present), ("not in", absent))
             for key, value in (d or {}).items()
         )
-        if get:
-            query += "and(" + " or ".join(f"key={self.key_id(k)}" for k in get) + ")"
-        current: typing.Dict[str, typing.Union[str, int]] = {}
+        query += "and(" + " or ".join(f"key={self.key_id(k)}" for k in get) + ")" if get else ""
+        current = {}
         for row in self.execute()(query + "order by package,id", ()):
             if "package" in current and current["package"] != row[0]:
                 yield current
