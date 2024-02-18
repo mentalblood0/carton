@@ -14,7 +14,7 @@
 
 Simple and reliable approach for data processing system storage
 
-### Basic concepts
+## Basic concepts
 
 It uses two tables:
 
@@ -48,7 +48,7 @@ So `select` operation implemented as taking
 
 and returning dictionaries each of `package` and `get` contained keys
 
-### Some implementation details
+## Some implementation details
 
 `select` method is implemented as generator avoiding excessive memory usage
 
@@ -58,20 +58,20 @@ There is no need to generate package identifier `package` as it taken to be `COA
 
 `key` enum related transformations implemented using non-invalidating cache
 
-### Compared to [conveyor](https://github.com/MentalBlood/conveyor)
+## Compared to [conveyor](https://github.com/MentalBlood/conveyor)
 
-|                                          |                  carton |                                         conveyor |
-| ---------------------------------------- | ----------------------: | -----------------------------------------------: |
-| lines of code                            |                      90 |                                             2610 |
-| core classes amount                      |                       1 |                                               27 |
-| storage type                             | SQL-compatible database | SQL-compatible database or files or user-defined |
-| workers concept                          |           semi-immanent |                                              yes |
-| automatic migrations                     |              not needed |                                              yes |
-| update operation                         |              not needed |                                              yes |
-| delete operation                         |                      no |                                              yes |
-| entity properties limit (when using RDB) | maximum `integer` value |                           maximum columns amount |
-| reserving                                |                      no |                                              yes |
-| logging                                  |                immanent |                              secondary, optional |
-| current time obtaining side              |                database |                                          library |
-| identifiers generation side              |                database |                                          library |
-| cross-repository transactions            |              not needed |                                              yes |
+|                                          |                  carton |                       conveyor |
+| ---------------------------------------- | ----------------------: | -----------------------------: |
+| lines of code                            |                      84 |                           2610 |
+| core classes amount                      |                       1 |                             27 |
+| storage type                             | SQL-compatible database | SQLCD or files or user-defined |
+| workers concept                          |           semi-immanent |                            yes |
+| automatic migrations                     |              not needed |                            yes |
+| update operation                         |              not needed |                            yes |
+| delete operation                         |                      no |                            yes |
+| entity properties limit (when using RDB) | maximum `integer` value |         maximum columns amount |
+| reserving                                |                      no |                            yes |
+| logging                                  |                immanent |            secondary, optional |
+| current time obtaining side              |                database |                        library |
+| identifiers generation side              |                database |                        library |
+| cross-repository transactions            |              not needed |                            yes |
