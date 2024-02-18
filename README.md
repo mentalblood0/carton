@@ -62,7 +62,7 @@ There is no need to generate package identifier `package` as it taken to be `COA
 
 |                                          |                  carton |                       conveyor |
 | ---------------------------------------- | ----------------------: | -----------------------------: |
-| lines of code                            |                      84 |                           2610 |
+| lines of code                            |                      82 |                           2610 |
 | core classes amount                      |                       1 |                             27 |
 | storage type                             | SQL-compatible database | SQLCD or files or user-defined |
 | workers concept                          |           semi-immanent |                            yes |
