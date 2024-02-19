@@ -40,6 +40,20 @@ def test_benchmark_select(carton: Carton, benchmark: pytest_benchmark.plugin.Ben
     assert result
 
 
+@pytest.mark.parametrize("amount", [10**n for n in range(1, 6)])
+@pytest.mark.parametrize("properties_amount", [10**n for n in range(1, 2)])
+def test_benchmark_complex_select(
+    carton: Carton, benchmark: pytest_benchmark.plugin.BenchmarkFixture, amount: int, properties_amount: int
+):
+    carton.insert((i, {str(i * j): str(i * j) for j in range(properties_amount)}) for i in range(amount))
+    benchmark.pedantic(
+        lambda: list(
+            carton.select({str(int(amount / 2 * j)): str(int(amount / 2 * j)) for j in range(properties_amount)})
+        ),
+        iterations=1,
+    )
+
+
 def test_groupby(carton: Carton):
     carton.insert([(None, {"a": "b", "x": "y"})])
     carton.insert([(None, {"c": "d", "x": "y"})])
