@@ -28,8 +28,10 @@ class Carton:
         )
         execute("create index if not exists carton_time on carton(time)", ())
         execute("create index if not exists carton_package on carton(package)", ())
-        execute("create index if not exists carton_value on carton(value)", ())
+        execute("create index if not exists carton_key on carton(key)", ())
         execute("create index if not exists carton_id_key on carton(id,key)", ())
+        execute("create index if not exists carton_id_value on carton(id,value)", ())
+        execute("create index if not exists carton_key_value on carton(key,value)", ())
 
     def insert(self, packages: typing.Iterable[typing.Tuple[typing.Union[int, None], typing.Dict[str, str]]]):
         execute = self.execute()
