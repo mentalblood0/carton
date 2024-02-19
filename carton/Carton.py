@@ -65,18 +65,23 @@ class Carton:
         present: typing.Dict[str, typing.Union[str, bool]],
         absent: typing.Union[typing.Dict[str, typing.Union[str, bool]], None] = None,
         get: typing.Union[typing.Set[str], None] = None,
+        exclude: typing.Union[typing.Set[int], None] = None,
     ):
         query = "select package,key,value from carton where " + " and ".join(
-            f"package {clause} (select package from carton where key={self.key_id(key)}"
-            + (f" and value='{value}')" if value is not True else ")")
-            for clause, d in (("in", present), ("not in", absent))
-            for key, value in (d or {}).items()
+            [
+                f"package {clause} (select package from carton where key={self.key_id(key)}"
+                + (f" and value='{value}')" if value is not True else ")")
+                for clause, d in (("in", present), ("not in", absent))
+                for key, value in (d or {}).items()
+            ]
+            + [f"package!={e}" for e in (exclude or {})]
         )
         query += "and(" + " or ".join(f"key={self.key_id(k)}" for k in get) + ")" if get else ""
         current = {}
-        for row in self.execute()(query + "order by package,id", ()):
+        for row in self.execute()(query + " order by package,id", ()):
             if "package" in current and current["package"] != row[0]:
                 yield current
                 current = {}
             current.update({"package": row[0], self.id_key(row[1]): row[2]})
-        yield current
+        if "package" in current:
+            yield current
