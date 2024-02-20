@@ -79,9 +79,10 @@ class Carton:
             if v is not True:
                 query += f" and c{i}.value='{v}'"
         for i, (k, v) in enumerate((absent or {}).items()):
-            query += f" join carton as c{i} on c.package=c{i}.package and c{i}.key!={self.key_id(k)}"
+            query += f" join carton as c{i} on c.package=c{i}.package and (c{i}.key!={self.key_id(k)}"
             if v is not True:
-                query += f" and c{i}.value='{v}'"
+                query += f" or c{i}.value!='{v}'"
+            query += ")"
         current = {}
         for row in self.execute()(query, ()):
             if "package" in current and current["package"] != row[0]:

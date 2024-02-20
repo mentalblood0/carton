@@ -80,7 +80,7 @@ def test_distinct(carton: Carton):
 def test_absent(carton: Carton):
     carton.insert([(None, {"a": "b", "x": "y"})])
     carton.insert([(0, {"a": "c", "x": "y"})])
-    assert next(carton.select(absent={"a": "b"}))["a"] == "b"
+    assert next(carton.select(absent={"a": "b"}))["a"] == "c"
 
 
 def test_exclude(carton: Carton):
