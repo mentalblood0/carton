@@ -40,8 +40,8 @@ def test_benchmark_select(carton: Carton, benchmark: pytest_benchmark.plugin.Ben
     assert result
 
 
-@pytest.mark.parametrize("amount", [10**n for n in range(1, 6)])
-@pytest.mark.parametrize("properties_amount", [10**n for n in range(1, 2)])
+@pytest.mark.parametrize("amount", [10**n for n in range(1, 5)])
+@pytest.mark.parametrize("properties_amount", [2**n for n in range(1, 6)])
 def test_benchmark_complex_select(
     carton: Carton, benchmark: pytest_benchmark.plugin.BenchmarkFixture, amount: int, properties_amount: int
 ):
