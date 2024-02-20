@@ -68,23 +68,20 @@ class Carton:
         get: typing.Union[typing.Set[str], None] = None,
         exclude: typing.Union[typing.Set[int], None] = None,
     ):
-        query = f"select c.package,c.key,c.value from (select package,key,value from carton"
+        query = "select c.package,c.key,c.value from (select package,key,value from carton"
         if exclude:
             query += " where " + " or ".join(f"package!={e}" for e in exclude)
         if get:
             query += " where " + " or ".join(f"key={self.key_id(k)}" for k in get)
         query += " order by package) as c"
-        i = 1
-        for k, v in present.items():
+        for i, (k, v) in enumerate(present.items()):
             query += f" join carton as c{i} on c.package=c{i}.package and c{i}.key={self.key_id(k)}"
             if v is not True:
                 query += f" and c{i}.value='{v}'"
-            i += 1
-        for k, v in (absent or {}).items():
+        for i, (k, v) in enumerate((absent or {}).items()):
             query += f" join carton as c{i} on c.package=c{i}.package and c{i}.key!={self.key_id(k)}"
             if v is not True:
                 query += f" and c{i}.value='{v}'"
-            i += 1
         current = {}
         for row in self.execute()(query, ()):
             if "package" in current and current["package"] != row[0]:
