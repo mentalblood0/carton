@@ -23,14 +23,11 @@ def test_benchmark_insert(carton: Carton, benchmark: pytest_benchmark.plugin.Ben
     )
 
 
-@pytest.mark.parametrize("amount", [10**n for n in range(5)])
+@pytest.mark.parametrize("amount", [10**n for n in range(6)])
 def test_benchmark_select(carton: Carton, benchmark: pytest_benchmark.plugin.BenchmarkFixture, amount: int):
     carton.insert((None if i % 2 else i, {"key": f"value_{i}", "a": "b", "file": f"path_{i}"}) for i in range(amount))
 
-    benchmark.pedantic(
-        lambda: list(carton.select({"key": f"value_{random.randrange(0, amount) - 1}"}, {}, {"file", "a"})),
-        iterations=1,
-    )
+    benchmark(lambda: list(carton.select({"key": f"value_{random.randrange(0, amount) - 1}"}, {}, {"file", "a"})))
 
     result = False
     for p in carton.select({"key": f"value_{amount-1}"}, {}, {"file", "a"}):
