@@ -32,6 +32,7 @@ with indexes on
 - `package`
 - `value`
 - `id`, `key`
+- `package`, `key`, `value`
 
 Additional one used for keys dynamic enum implementation:
 
@@ -62,7 +63,7 @@ There is no need to generate package identifier `package` as it taken to be `COA
 
 |                                          |                  carton |                       conveyor |
 | ---------------------------------------- | ----------------------: | -----------------------------: |
-| lines of code                            |                      92 |                           2610 |
+| lines of code                            |                      93 |                           2610 |
 | core classes amount                      |                       1 |                             27 |
 | storage type                             | SQL-compatible database | SQLCD or files or user-defined |
 | workers concept                          |           semi-immanent |                            yes |
