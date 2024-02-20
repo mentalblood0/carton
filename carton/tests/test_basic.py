@@ -47,11 +47,16 @@ def test_benchmark_complex_select(
     carton: Carton, benchmark: pytest_benchmark.plugin.BenchmarkFixture, amount: int, properties_amount: int
 ):
     carton.insert((i, {str(i * j): str(i * j) for j in range(properties_amount)}) for i in range(amount))
-    benchmark.pedantic(
+    benchmark(
         lambda: list(
-            carton.select({str(int(amount / 2 * j)): str(int(amount / 2 * j)) for j in range(properties_amount)})
-        ),
-        iterations=1,
+            carton.select(
+                {
+                    str(int(i * j)): str(int(i * j))
+                    for j in range(properties_amount)
+                    for i in [random.randrange(0, amount) - 1]
+                }
+            )
+        )
     )
 
 
