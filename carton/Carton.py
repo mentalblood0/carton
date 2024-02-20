@@ -63,7 +63,7 @@ class Carton:
 
     def select(
         self,
-        present: typing.Dict[str, typing.Union[str, bool]],
+        present: typing.Union[typing.Dict[str, typing.Union[str, bool]], None] = None,
         absent: typing.Union[typing.Dict[str, typing.Union[str, bool]], None] = None,
         get: typing.Union[typing.Set[str], None] = None,
         exclude: typing.Union[typing.Set[int], None] = None,
@@ -74,7 +74,7 @@ class Carton:
         if get:
             query += " where " + " or ".join(f"key={self.key_id(k)}" for k in get)
         query += " order by package) as c"
-        for i, (k, v) in enumerate(present.items()):
+        for i, (k, v) in enumerate((present or {}).items()):
             query += f" join carton as c{i} on c.package=c{i}.package and c{i}.key={self.key_id(k)}"
             if v is not True:
                 query += f" and c{i}.value='{v}'"
