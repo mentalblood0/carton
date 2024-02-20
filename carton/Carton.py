@@ -30,6 +30,7 @@ class Carton:
         execute("create index if not exists carton_package on carton(package)", ())
         execute("create index if not exists carton_value on carton(value)", ())
         execute("create index if not exists carton_id_key on carton(id,key)", ())
+        execute("create index if not exists carton_package_key_value on carton(package,key,value)", ())
 
     def insert(self, packages: typing.Iterable[typing.Tuple[typing.Union[int, None], typing.Dict[str, str]]]):
         execute = self.execute()
@@ -67,18 +68,25 @@ class Carton:
         get: typing.Union[typing.Set[str], None] = None,
         exclude: typing.Union[typing.Set[int], None] = None,
     ):
-        query = "select package,key,value from carton where " + " and ".join(
-            [
-                f"package {clause} (select package from carton where key={self.key_id(key)}"
-                + (f" and value='{value}')" if value is not True else ")")
-                for clause, d in (("in", present), ("not in", absent))
-                for key, value in (d or {}).items()
-            ]
-            + [f"package!={e}" for e in (exclude or {})]
-        )
-        query += "and(" + " or ".join(f"key={self.key_id(k)}" for k in get) + ")" if get else ""
+        query = f"select c.package,c.key,c.value from (select package,key,value from carton"
+        if exclude:
+            query += " where " + " or ".join(f"package!={e}" for e in exclude)
+        if get:
+            query += " where " + " or ".join(f"key={self.key_id(k)}" for k in get)
+        query += " order by package) as c"
+        i = 1
+        for k, v in present.items():
+            query += f" join carton as c{i} on c.package=c{i}.package and c{i}.key={self.key_id(k)}"
+            if v is not True:
+                query += f" and c{i}.value='{v}'"
+            i += 1
+        for k, v in (absent or {}).items():
+            query += f" join carton as c{i} on c.package=c{i}.package and c{i}.key!={self.key_id(k)}"
+            if v is not True:
+                query += f" and c{i}.value='{v}'"
+            i += 1
         current = {}
-        for row in self.execute()(query + " order by package,id", ()):
+        for row in self.execute()(query, ()):
             if "package" in current and current["package"] != row[0]:
                 yield current
                 current = {}

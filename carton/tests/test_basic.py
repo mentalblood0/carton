@@ -46,12 +46,11 @@ def test_benchmark_complex_select(
     carton: Carton, benchmark: pytest_benchmark.plugin.BenchmarkFixture, amount: int, properties_amount: int
 ):
     carton.insert((i, {str(i * j): str(i * j) for j in range(properties_amount)}) for i in range(amount))
-    benchmark.pedantic(
-        lambda: list(
-            carton.select({str(int(amount / 2 * j)): str(int(amount / 2 * j)) for j in range(properties_amount)})
-        ),
-        iterations=1,
+    query = lambda: list(
+        carton.select({str(int(amount / 2 * j)): str(int(amount / 2 * j)) for j in range(properties_amount)})
     )
+    benchmark.pedantic(query, iterations=1)
+    assert query()
 
 
 def test_groupby(carton: Carton):
