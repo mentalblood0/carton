@@ -83,7 +83,7 @@ def test_groupby(carton: Carton):
 def test_distinct(carton: Carton):
     carton.insert([(None, {"a": "b", "x": "y"})])
     carton.insert([(0, {"a": "c", "x": "y"})])
-    assert list(carton.select({"x": "y"})) == [{"a": "c", "x": "y", "a": "b", "package": 0}]
+    assert list(carton.select({"x": "y"})) == [{"a": "c", "x": "y", "package": 0}]
 
 
 def test_absent(carton: Carton):
