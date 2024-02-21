@@ -81,7 +81,7 @@ class Carton:
                 if v is not True:
                     query += f" and c{c}.value='{v}'"
                 c += 1
-        query += " and ".join(f"where c{i +len(present or {})}.value is null" for i in range(len(absent or {})))
+        query += " and ".join(f"where c{i + len(present or {})}.value is null" for i in range(len(absent or {})))
         current = {}
         for row in self.execute()(query, ()):
             if "package" in current and current["package"] != row[0]:
