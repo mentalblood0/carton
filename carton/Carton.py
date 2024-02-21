@@ -75,7 +75,7 @@ class Carton:
             + " order by package) as c"
         )
         c = 0
-        for j, d in [("", present), ("left", absent)]:
+        for j, d in (("", present), ("left", absent)):
             for k, v in (d or {}).items():
                 query += f" {j} join carton as c{c} on c.package=c{c}.package and c{c}.key={self.key_id(k)} "
                 if v is not True:
