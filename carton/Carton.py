@@ -81,9 +81,9 @@ class Carton:
                 query += f" and c{c}.value='{v}'"
             c += 1
         for k, v in (absent or {}).items():
-            query += f" left join carton as c{c} on c.package=c{c}.package and c{c}.key={self.key_id(k)}"
+            query += f" left join carton as c{c} on c.package=c{c}.package and c{c}.key={self.key_id(k)} "
             if v is not True:
-                query += f" and c{c}.value='{v}'"
+                query += f"and c{c}.value='{v}'"
             c += 1
         present_len = len(present or {})
         query += " and ".join(f"where c{i + present_len}.value is null" for i in range(len(absent or {})))
