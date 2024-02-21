@@ -68,25 +68,20 @@ class Carton:
         get: typing.Union[typing.Set[str], None] = None,
         exclude: typing.Union[typing.Set[int], None] = None,
     ):
-        query = "select c.package,c.key,c.value from (select package,key,value from carton"
-        if exclude:
-            query += " where " + " or ".join(f"package!={e}" for e in exclude)
-        if get:
-            query += " where " + " or ".join(f"key={self.key_id(k)}" for k in get)
-        query += " order by package) as c"
+        query = (
+            "select c.package,c.key,c.value from (select package,key,value from carton"
+            + ((" where " + " or ".join(f"package!={e}" for e in exclude)) if exclude else "")
+            + ((" where " + " or ".join(f"key={self.key_id(k)}" for k in get)) if get else "")
+            + " order by package) as c"
+        )
         c = 0
-        for k, v in (present or {}).items():
-            query += f" join carton as c{c} on c.package=c{c}.package and c{c}.key={self.key_id(k)}"
-            if v is not True:
-                query += f" and c{c}.value='{v}'"
-            c += 1
-        for k, v in (absent or {}).items():
-            query += f" left join carton as c{c} on c.package=c{c}.package and c{c}.key={self.key_id(k)} "
-            if v is not True:
-                query += f"and c{c}.value='{v}'"
-            c += 1
-        present_len = len(present or {})
-        query += " and ".join(f"where c{i + present_len}.value is null" for i in range(len(absent or {})))
+        for j, d in [("", present), ("left", absent)]:
+            for k, v in (d or {}).items():
+                query += f" {j} join carton as c{c} on c.package=c{c}.package and c{c}.key={self.key_id(k)} "
+                if v is not True:
+                    query += f" and c{c}.value='{v}'"
+                c += 1
+        query += " and ".join(f"where c{i +len(present or {})}.value is null" for i in range(len(absent or {})))
         current = {}
         for row in self.execute()(query, ()):
             if "package" in current and current["package"] != row[0]:
