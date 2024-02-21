@@ -60,6 +60,15 @@ def test_benchmark_complex_select(
     )
 
 
+def test_present(carton: Carton):
+    carton.insert([(0, {"a": "b", "x": "y"})])
+    carton.insert([(1, {"a": "b", "x": "z"})])
+    assert list(carton.select(present={"a": "b", "x": "y"})) == [{"a": "b", "x": "y", "package": 0}]
+    assert list(carton.select(present={"a": "b", "x": "z"})) == [{"a": "b", "x": "z", "package": 1}]
+    assert list(carton.select(present={"x": "y"})) == [{"a": "b", "x": "y", "package": 0}]
+    assert list(carton.select(present={"x": "z"})) == [{"a": "b", "x": "z", "package": 1}]
+
+
 def test_groupby(carton: Carton):
     carton.insert([(None, {"a": "b", "x": "y"})])
     carton.insert([(None, {"c": "d", "x": "y"})])
@@ -74,13 +83,23 @@ def test_groupby(carton: Carton):
 def test_distinct(carton: Carton):
     carton.insert([(None, {"a": "b", "x": "y"})])
     carton.insert([(0, {"a": "c", "x": "y"})])
-    assert next(carton.select({"x": "y"}))["a"] == "c"
+    assert list(carton.select({"x": "y"})) == [{"a": "c", "x": "y", "a": "b", "package": 0}]
 
 
 def test_absent(carton: Carton):
-    carton.insert([(None, {"a": "b", "x": "y"})])
-    carton.insert([(0, {"a": "c", "x": "y"})])
-    assert next(carton.select(absent={"a": "b"}))["a"] == "c"
+    carton.insert([(0, {"a": "b", "x": "y"})])
+    carton.insert([(1, {"a": "c", "x": "y"})])
+    result = list(carton.select(absent={"a": "b"}))
+    assert {"package": 1, "a": "c", "x": "y"} in result
+    assert len(result) == 1
+
+
+def test_absent_key(carton: Carton):
+    carton.insert([(0, {"a": "b", "x": "y"})])
+    carton.insert([(1, {"x": "y"})])
+    result = list(carton.select(absent={"a": True}))
+    assert {"package": 1, "x": "y"} in result
+    assert len(result) == 1
 
 
 def test_exclude(carton: Carton):

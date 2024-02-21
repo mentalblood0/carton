@@ -31,6 +31,7 @@ class Carton:
         execute("create index if not exists carton_value on carton(value)", ())
         execute("create index if not exists carton_id_key on carton(id,key)", ())
         execute("create index if not exists carton_package_key_value on carton(package,key,value)", ())
+        execute("create index if not exists carton_package_key on carton(package,key)", ())
 
     def insert(self, packages: typing.Iterable[typing.Tuple[typing.Union[int, None], typing.Dict[str, str]]]):
         execute = self.execute()
@@ -74,15 +75,20 @@ class Carton:
         if get:
             query += " where " + " or ".join(f"key={self.key_id(k)}" for k in get)
         query += " order by package) as c"
-        for i, (k, v) in enumerate((present or {}).items()):
-            query += f" join carton as c{i} on c.package=c{i}.package and c{i}.key={self.key_id(k)}"
+        c = 0
+        for k, v in (present or {}).items():
+            query += f" join carton as c{c} on c.package=c{c}.package and c{c}.key={self.key_id(k)}"
             if v is not True:
-                query += f" and c{i}.value='{v}'"
-        for i, (k, v) in enumerate((absent or {}).items()):
-            query += f" join carton as c{i} on c.package=c{i}.package and (c{i}.key!={self.key_id(k)}"
+                query += f" and c{c}.value='{v}'"
+            c += 1
+        for k, v in (absent or {}).items():
+            query += f" left join carton as c{c} on c.package=c{c}.package and c{c}.key={self.key_id(k)}"
             if v is not True:
-                query += f" or c{i}.value!='{v}'"
-            query += ")"
+                query += f" and c{c}.value='{v}'"
+            c += 1
+        query += " " + " and ".join(
+            f"where c{i}.key is null" for i in range(len(present or {}), len(present or {}) + len(absent or {}))
+        )
         current = {}
         for row in self.execute()(query, ()):
             if "package" in current and current["package"] != row[0]:
