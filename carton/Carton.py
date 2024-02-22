@@ -27,7 +27,7 @@ class Carton:
             (),
         )
         execute("create index if not exists carton_time on carton(time)", ())
-        execute("create index if not exists carton_package on carton(package)", ())
+        execute("create index if not exists carton_package on carton(id,package)", ())
         execute("create index if not exists carton_value on carton(value)", ())
         execute("create index if not exists carton_id_key on carton(id,key)", ())
         execute("create index if not exists carton_package_key_value on carton(package,key,value)", ())
@@ -71,7 +71,7 @@ class Carton:
         query = (
             "select c.package,c.key,c.value from (select package,key,value from carton"
             + ((" where " + " or ".join(f"package!={e}" for e in exclude)) if exclude else "")
-            + ((" where " + " or ".join(f"key={self.key_id(k)}" for k in get)) if get else "")
+            + (((" where " if not exclude else "") + " or ".join(f"key={self.key_id(k)}" for k in get)) if get else "")
             + " order by package) as c"
         )
         c = 0
@@ -81,7 +81,7 @@ class Carton:
                 if v is not True:
                     query += f" and c{c}.value='{v}'"
                 c += 1
-        query += " and ".join(f"where c{i + len(present or {})}.value is null" for i in range(len(absent or {})))
+        query += " and ".join(f"where c{i + len(present or {})}.package is null" for i in range(len(absent or {})))
         current = {}
         for row in self.execute()(query, ()):
             if "package" in current and current["package"] != row[0]:
