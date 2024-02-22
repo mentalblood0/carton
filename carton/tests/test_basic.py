@@ -66,6 +66,9 @@ def test_benchmark_select_absent(carton: Carton, benchmark: pytest_benchmark.plu
     carton.insert((i, {"a": uuid.uuid4().hex, "key": "value"}) for i in range(amount))
     carton.insert([(amount, {"a": uuid.uuid4().hex})])
     benchmark(lambda: list(carton.select(absent={"key": "value"})))
+    result = list(carton.select(absent={"key": "value"}))
+    assert len(result) == 1
+    assert set(result[0].keys()) == {"package", "a"}
 
 
 def test_present(carton: Carton):
