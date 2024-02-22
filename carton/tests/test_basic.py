@@ -1,5 +1,6 @@
 import random
 import sqlite3
+import uuid
 
 import pytest
 import pytest_benchmark.plugin
@@ -58,6 +59,13 @@ def test_benchmark_complex_select(
             )
         )
     )
+
+
+@pytest.mark.parametrize("amount", [2**n for n in range(12)])
+def test_benchmark_select_absent(carton: Carton, benchmark: pytest_benchmark.plugin.BenchmarkFixture, amount: int):
+    carton.insert((i, {"a": uuid.uuid4().hex, "key": "value"}) for i in range(amount))
+    carton.insert([(amount, {"a": uuid.uuid4().hex})])
+    benchmark(lambda: list(carton.select(absent={"key": "value"})))
 
 
 def test_present(carton: Carton):
