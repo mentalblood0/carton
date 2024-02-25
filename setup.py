@@ -5,7 +5,7 @@ import setuptools
 if __name__ == "__main__":
     setuptools.setup(
         name="carton",
-        version="0.3.0",
+        version="0.4.0",
         python_requires=">=3.7",
         keywords=["data-processing"],
         url="https://github.com/MentalBlood/carton",

@@ -1,6 +1,5 @@
 import random
 import sqlite3
-import uuid
 
 import pytest
 import pytest_benchmark.plugin
@@ -28,10 +27,10 @@ def test_benchmark_insert(carton: Carton, benchmark: pytest_benchmark.plugin.Ben
 def test_benchmark_select(carton: Carton, benchmark: pytest_benchmark.plugin.BenchmarkFixture, amount: int):
     carton.insert((None if i % 2 else i, {"key": f"value_{i}", "a": "b", "file": f"path_{i}"}) for i in range(amount))
 
-    benchmark(lambda: list(carton.select({"key": f"value_{random.randrange(0, amount) - 1}"}, {}, {"file", "a"})))
+    benchmark(lambda: list(carton.select({"key": f"value_{random.randrange(0, amount) - 1}"}, {"file", "a"})))
 
     result = False
-    for p in carton.select({"key": f"value_{amount-1}"}, {}, {"file", "a"}):
+    for p in carton.select({"key": f"value_{amount-1}"}, {"file", "a"}):
         result = True
         assert "package" in p
         assert isinstance(p["package"], int)
@@ -61,16 +60,6 @@ def test_benchmark_complex_select(
     )
 
 
-@pytest.mark.parametrize("amount", [2**n for n in range(12)])
-def test_benchmark_select_absent(carton: Carton, benchmark: pytest_benchmark.plugin.BenchmarkFixture, amount: int):
-    carton.insert((i, {"a": uuid.uuid4().hex, "key": "value"}) for i in range(amount))
-    carton.insert([(amount, {"a": uuid.uuid4().hex})])
-    benchmark(lambda: list(carton.select(absent={"key": "value"})))
-    result = list(carton.select(absent={"key": "value"}))
-    assert len(result) == 1
-    assert set(result[0].keys()) == {"package", "a"}
-
-
 def test_present(carton: Carton):
     carton.insert([(0, {"a": "b", "x": "y"})])
     carton.insert([(1, {"a": "b", "x": "z"})])
@@ -95,22 +84,6 @@ def test_distinct(carton: Carton):
     carton.insert([(None, {"a": "b", "x": "y"})])
     carton.insert([(0, {"a": "c", "x": "y"})])
     assert list(carton.select({"x": "y"})) == [{"a": "c", "x": "y", "package": 0}]
-
-
-def test_absent(carton: Carton):
-    carton.insert([(0, {"a": "b", "x": "y"})])
-    carton.insert([(1, {"a": "c", "x": "y"})])
-    result = list(carton.select(absent={"a": "b"}))
-    assert {"package": 1, "a": "c", "x": "y"} in result
-    assert len(result) == 1
-
-
-def test_absent_key(carton: Carton):
-    carton.insert([(0, {"a": "b", "x": "y"})])
-    carton.insert([(1, {"x": "y"})])
-    result = list(carton.select(absent={"a": True}))
-    assert {"package": 1, "x": "y"} in result
-    assert len(result) == 1
 
 
 def test_exclude(carton: Carton):

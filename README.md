@@ -44,8 +44,8 @@ with index on `key`
 So `select` operation implemented as taking
 
 - `present` - dictionary of key/value pairs presented in packages
-- `absent` - dictionary of key/value pairs not presented in packages
 - `get` - set of keys of key/value pairs to get
+- `exclude` - set of packages identifiers to exclude from search
 
 and returning dictionaries each of `package` and `get` contained keys
 
@@ -63,7 +63,7 @@ There is no need to generate package identifier `package` as it taken to be `COA
 
 |                                          |                  carton |                       conveyor |
 | ---------------------------------------- | ----------------------: | -----------------------------: |
-| lines of code                            |                      92 |                           2610 |
+| lines of code                            |                      93 |                           2610 |
 | core classes amount                      |                       1 |                             27 |
 | storage type                             | SQL-compatible database | SQLCD or files or user-defined |
 | workers concept                          |           semi-immanent |                            yes |
