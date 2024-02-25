@@ -88,4 +88,4 @@ def test_distinct(carton: Carton):
 
 def test_exclude(carton: Carton):
     carton.insert([(None, {"a": "b"})])
-    assert not [*carton.select({"a": "b"}, exclude={0})]
+    assert not [*carton.select({"a": "b"}, {"a"}, {0})]
