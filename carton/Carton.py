@@ -75,9 +75,13 @@ class Carton:
     ):
         query = "select c.package,c.key,c.value from (select package,key,value from carton"
         if get or exclude:
-            query += " where " + " or ".join(
-                [f"package!={e}" for e in (exclude or {})] + [f"key={self.key_id(k)}" for k in (get or {})]
-            )
+            query += " where"
+            if exclude:
+                query += f" package not in ({','.join(str(e) for e in exclude)})"
+            if get:
+                if exclude:
+                    query += " and"
+                query += f" key in ({','.join(str(self.key_id(k)) for k in get)})"
         query += " order by package) as c"
         for c, (k, v) in enumerate((present or {}).items()):
             query += f" join carton as c{c} on c.package=c{c}.package and c{c}.key={self.key_id(k)}"
