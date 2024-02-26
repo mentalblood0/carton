@@ -76,7 +76,7 @@ class Carton:
         get: typing.Union[typing.Set[str], None] = None,
         exclude: typing.Union[typing.Set[int], None] = None,
     ):
-        query = "select c.package,c.key,c.value from (select package,key,value from carton"
+        query = "select c.package,c.key,c.value,max(c.id) from (select package,key,value,id from carton"
         if get or exclude:
             query += " where"
             if exclude:
@@ -93,7 +93,8 @@ class Carton:
             elif v is True:
                 query += " is not null"
             else:
-                query += f" ='{v}'"
+                query += f"='{v}'"
+        query += " group by c.package,c.key"
         current = {}
         for row in self.execute()(query, ()):
             if "package" in current and current["package"] != row[0]:

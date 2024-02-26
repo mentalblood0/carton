@@ -23,9 +23,15 @@ def test_benchmark_insert(carton: Carton, benchmark: pytest_benchmark.plugin.Ben
     )
 
 
-@pytest.mark.parametrize("amount", [10**n for n in range(6)])
-def test_benchmark_select(carton: Carton, benchmark: pytest_benchmark.plugin.BenchmarkFixture, amount: int):
-    carton.insert((None if i % 2 else i, {"key": f"value_{i}", "a": "b", "file": f"path_{i}"}) for i in range(amount))
+@pytest.mark.parametrize("amount,result_amount", [(10**n, 10**k) for n in range(4) for k in range(n)])
+def test_benchmark_select(
+    carton: Carton, benchmark: pytest_benchmark.plugin.BenchmarkFixture, amount: int, result_amount: int
+):
+    carton.insert(
+        (None, {"key": f"value_{i}", "a": "b", "file": f"path_{i}"})
+        for i in range(amount)
+        for _ in range(result_amount)
+    )
 
     benchmark(lambda: list(carton.select({"key": f"value_{random.randrange(0, amount) - 1}"}, {"file", "a"})))
 
@@ -39,25 +45,6 @@ def test_benchmark_select(carton: Carton, benchmark: pytest_benchmark.plugin.Ben
         assert "a" in p
         assert isinstance(p["a"], str)
     assert result
-
-
-@pytest.mark.parametrize("amount", [10**n for n in range(1, 5)])
-@pytest.mark.parametrize("properties_amount", [2**n for n in range(1, 6)])
-def test_benchmark_complex_select(
-    carton: Carton, benchmark: pytest_benchmark.plugin.BenchmarkFixture, amount: int, properties_amount: int
-):
-    carton.insert((i, {str(i * j): str(i * j) for j in range(properties_amount)}) for i in range(amount))
-    benchmark(
-        lambda: list(
-            carton.select(
-                {
-                    str(int(i * j)): str(int(i * j))
-                    for j in range(properties_amount)
-                    for i in [random.randrange(0, amount) - 1]
-                }
-            )
-        )
-    )
 
 
 def test_present(carton: Carton):
@@ -94,3 +81,11 @@ def test_exclude(carton: Carton):
 def test_insert_null(carton: Carton):
     carton.insert([(0, {"a": None})])
     assert list(carton.select({"a": None})) == [{"package": 0, "a": None}]
+
+
+def test_new(carton: Carton):
+    carton.insert([(0, {"a": "b"})])
+    carton.insert([(0, {"a": "c"})])
+    # for row in carton.execute()("select max(id),package,key,value from carton group by package,key", ()):
+    #     print(row)
+    assert not list(carton.select({"a": "b"}))
