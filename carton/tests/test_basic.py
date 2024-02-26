@@ -93,3 +93,4 @@ def test_new(carton: Carton):
 def test_benchmark_select_new(carton: Carton, benchmark: pytest_benchmark.plugin.BenchmarkFixture, amount: int):
     carton.insert([(0, {"a": f"a_{i}"}) for i in range(amount)])
     benchmark(lambda: list(carton.select({"a": f"a_{amount-1}"})))
+    assert list(carton.select({"a": f"a_{amount-1}"})) == [{"package": 0, "a": f"a_{amount-1}"}]
