@@ -87,11 +87,13 @@ class Carton:
                 query += f" key in ({','.join(str(self.key_id(k)) for k in get)})"
         query += " order by package) as c"
         for c, (k, v) in enumerate((present or {}).items()):
-            query += f" join carton as c{c} on c.package=c{c}.package and c{c}.key={self.key_id(k)}"
+            query += f" join carton as c{c} on c.package=c{c}.package and c{c}.key={self.key_id(k)} and c{c}.value"
             if v is None:
-                query += f" and c{c}.value is null"
-            elif v is not True:
-                query += f" and c{c}.value='{v}'"
+                query += " is null"
+            elif v is True:
+                query += " is not null"
+            else:
+                query += f" ='{v}'"
         current = {}
         for row in self.execute()(query, ()):
             if "package" in current and current["package"] != row[0]:
