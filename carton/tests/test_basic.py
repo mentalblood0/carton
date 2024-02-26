@@ -64,7 +64,7 @@ def test_groupby(carton: Carton):
     result = list(carton.select({"x": "y"}))
     assert {"package": 0, "a": "b", "e": "f", "x": "y"} in result
     assert {"package": 1, "c": "d", "g": "h", "x": "y"} in result
-    assert list(carton.select({"x": "y"})) == list(carton.select({"x": "y"}, get={"package", "a", "e", "c", "g", "x"}))
+    assert list(carton.select({"x": True})) == list(carton.select({"x": "y"}, get={"package", "a", "e", "c", "g", "x"}))
 
 
 def test_distinct(carton: Carton):
