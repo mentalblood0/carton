@@ -7,8 +7,8 @@ import typing
 class Carton:
     execute: typing.Callable[[], typing.Callable[[str, typing.Tuple[typing.Any, ...]], typing.Any]]
     executemany: typing.Callable[[], typing.Callable[[str, typing.List[typing.Tuple[typing.Any, ...]]], typing.Any]]
-    integer: str = "integer"
-    primary_key: str = "id integer primary key autoincrement"
+    package: str = "integer"
+    primary_key: str = "integer primary key autoincrement"
     datetime: str = "datetime"
     now: str = "datetime('now')"
     ph: str = "?"
@@ -17,13 +17,13 @@ class Carton:
 
     def __post_init__(self):
         execute = self.execute()
-        execute(f"create table if not exists keys({self.primary_key}, key text unique)", ())
+        execute(f"create table if not exists keys(id {self.primary_key}, key text unique)", ())
         execute("create index if not exists keys_key on keys(key)", ())
         execute(
             "create table if not exists carton("
-            f"{self.primary_key},"
+            f"id {self.primary_key},"
             f"time {self.datetime} default({self.now}) not null,"
-            f"package {self.integer} not null,"
+            f"package {self.package} not null,"
             "key integer not null,"
             "value text,"
             "foreign key(key) references keys(id))",
@@ -35,7 +35,10 @@ class Carton:
         execute("create index if not exists carton_id_key on carton(id,key)", ())
         execute("create index if not exists carton_package_key_value on carton(package,key,value)", ())
 
-    def insert(self, packages: typing.Iterable[typing.Tuple[typing.Union[int, None], typing.Dict[str, str]]]):
+    def insert(
+        self,
+        packages: typing.Iterable[typing.Tuple[typing.Union[int, None], typing.Dict[str, typing.Union[str, None]]]],
+    ):
         execute = self.execute()
         buf = []
         for p in filter(operator.itemgetter(1), packages):
@@ -69,7 +72,7 @@ class Carton:
 
     def select(
         self,
-        present: typing.Union[typing.Dict[str, typing.Union[str, bool]], None] = None,
+        present: typing.Union[typing.Dict[str, typing.Union[str, bool, None]], None] = None,
         get: typing.Union[typing.Set[str], None] = None,
         exclude: typing.Union[typing.Set[int], None] = None,
     ):
@@ -85,7 +88,9 @@ class Carton:
         query += " order by package) as c"
         for c, (k, v) in enumerate((present or {}).items()):
             query += f" join carton as c{c} on c.package=c{c}.package and c{c}.key={self.key_id(k)}"
-            if v is not True:
+            if v is None:
+                query += f" and c{c}.value is null"
+            elif v is not True:
                 query += f" and c{c}.value='{v}'"
         current = {}
         for row in self.execute()(query, ()):
