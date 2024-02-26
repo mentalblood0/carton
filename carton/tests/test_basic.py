@@ -23,9 +23,9 @@ def test_benchmark_insert(carton: Carton, benchmark: pytest_benchmark.plugin.Ben
     )
 
 
-@pytest.mark.parametrize("amount,result_amount", [(10**n, 1) for n in range(6)])
+@pytest.mark.parametrize("amount", [10**n for n in range(6)])
 def test_benchmark_select(
-    carton: Carton, benchmark: pytest_benchmark.plugin.BenchmarkFixture, amount: int, result_amount: int
+    carton: Carton, benchmark: pytest_benchmark.plugin.BenchmarkFixture, amount: int, result_amount: int = 1
 ):
     carton.insert(
         (None, {"key": f"value_{i}", "a": "b", "file": f"path_{i}"})
@@ -86,6 +86,4 @@ def test_insert_null(carton: Carton):
 def test_new(carton: Carton):
     carton.insert([(0, {"a": "b"})])
     carton.insert([(0, {"a": "c"})])
-    # for row in carton.execute()("select max(id),package,key,value from carton group by package,key", ()):
-    #     print(row)
     assert not list(carton.select({"a": "b"}))
