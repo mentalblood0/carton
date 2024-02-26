@@ -87,3 +87,9 @@ def test_new(carton: Carton):
     carton.insert([(0, {"a": "b"})])
     carton.insert([(0, {"a": "c"})])
     assert not list(carton.select({"a": "b"}))
+
+
+@pytest.mark.parametrize("amount", [10**n for n in range(6)])
+def test_benchmark_select_new(carton: Carton, benchmark: pytest_benchmark.plugin.BenchmarkFixture, amount: int):
+    carton.insert([(0, {"a": f"a_{i}"}) for i in range(amount)])
+    benchmark(lambda: list(carton.select({"a": f"a_{amount-1}"})))

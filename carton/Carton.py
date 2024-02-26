@@ -9,7 +9,7 @@ class Carton:
     executemany: typing.Callable[[], typing.Callable[[str, typing.List[typing.Tuple[typing.Any, ...]]], typing.Any]]
     package: str = "integer"
     primary_key: str = "integer primary key autoincrement"
-    actual: str = "integer default(1)"
+    actual: str = "integer default(1) not null"
     datetime: str = "datetime"
     now: str = "datetime('now')"
     ph: str = "?"
@@ -57,7 +57,9 @@ class Carton:
                     (self.key_id(k_v[0][0]), k_v[0][1]),
                 ).__next__()[0]
                 insert_buf.extend((p_id, self.key_id(e[0]), e[1]) for e in k_v[1:])
-        self.executemany()(f"update carton set actual=0 where package={self.ph} and key={self.ph}", update_buf)
+        self.executemany()(
+            f"update carton set actual=0 where package={self.ph} and key={self.ph} and actual=1", update_buf
+        )
         self.executemany()(f"insert into carton(package,key,value)values({self.ph},{self.ph},{self.ph})", insert_buf)
 
     def key_id(self, key: str) -> int:
