@@ -9,6 +9,7 @@ class Carton:
     executemany: typing.Callable[[], typing.Callable[[str, typing.List[typing.Tuple[typing.Any, ...]]], typing.Any]]
     package: str = "integer"
     primary_key: str = "integer primary key autoincrement"
+    actual: str = "integer default(1)"
     datetime: str = "datetime"
     now: str = "datetime('now')"
     ph: str = "?"
@@ -26,6 +27,7 @@ class Carton:
             f"package {self.package} not null,"
             "key integer not null,"
             "value text,"
+            f"actual {self.actual},"
             "foreign key(key) references keys(id))",
             (),
         )
@@ -33,17 +35,19 @@ class Carton:
         execute("create index if not exists carton_package on carton(package)", ())
         execute("create index if not exists carton_value on carton(value)", ())
         execute("create index if not exists carton_id_key on carton(id,key)", ())
-        execute("create index if not exists carton_package_key_value on carton(package,key,value)", ())
+        execute("create index if not exists carton_package_key_value on carton(package,actual,key,value)", ())
 
     def insert(
         self,
         packages: typing.Iterable[typing.Tuple[typing.Union[int, None], typing.Dict[str, typing.Union[str, None]]]],
     ):
         execute = self.execute()
-        buf = []
+        update_buf = []
+        insert_buf = []
         for p in filter(operator.itemgetter(1), packages):
             if p[0] is not None:
-                buf.extend((p[0], self.key_id(k), v) for k, v in p[1].items())
+                update_buf.extend((p[0], self.key_id(k)) for k in p[1].keys())
+                insert_buf.extend((p[0], self.key_id(k), v) for k, v in p[1].items())
             else:
                 k_v = list(p[1].items())
                 p_id = execute(
@@ -52,8 +56,9 @@ class Carton:
                     "returning package",
                     (self.key_id(k_v[0][0]), k_v[0][1]),
                 ).__next__()[0]
-                buf.extend((p_id, self.key_id(e[0]), e[1]) for e in k_v[1:])
-        self.executemany()(f"insert into carton(package,key,value)values({self.ph},{self.ph},{self.ph})", buf)
+                insert_buf.extend((p_id, self.key_id(e[0]), e[1]) for e in k_v[1:])
+        self.executemany()(f"update carton set actual=0 where package={self.ph} and key={self.ph}", update_buf)
+        self.executemany()(f"insert into carton(package,key,value)values({self.ph},{self.ph},{self.ph})", insert_buf)
 
     def key_id(self, key: str) -> int:
         if key not in self.key_id_cache:
@@ -76,25 +81,23 @@ class Carton:
         get: typing.Union[typing.Set[str], None] = None,
         exclude: typing.Union[typing.Set[int], None] = None,
     ):
-        query = "select c.package,c.key,c.value,max(c.id) from (select package,key,value,id from carton"
-        if get or exclude:
-            query += " where"
-            if exclude:
-                query += f" package not in ({','.join(str(e) for e in exclude)})"
-            if get:
-                if exclude:
-                    query += " and"
-                query += f" key in ({','.join(str(self.key_id(k)) for k in get)})"
+        query = "select c.package,c.key,c.value from (select package,key,value from carton where actual=1"
+        if exclude:
+            query += f" and package not in ({','.join(str(e) for e in exclude)})"
+        if get:
+            query += f" and key in ({','.join(str(self.key_id(k)) for k in get)})"
         query += " order by package) as c"
         for c, (k, v) in enumerate((present or {}).items()):
-            query += f" join carton as c{c} on c.package=c{c}.package and c{c}.key={self.key_id(k)} and c{c}.value"
+            query += (
+                f" join carton as c{c} on c.package=c{c}.package"
+                f" and c{c}.actual=1 and c{c}.key={self.key_id(k)} and c{c}.value"
+            )
             if v is None:
                 query += " is null"
             elif v is True:
                 query += " is not null"
             else:
                 query += f"='{v}'"
-        query += " group by c.package,c.key"
         current = {}
         for row in self.execute()(query, ()):
             if "package" in current and current["package"] != row[0]:

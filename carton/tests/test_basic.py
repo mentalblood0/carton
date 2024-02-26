@@ -23,7 +23,7 @@ def test_benchmark_insert(carton: Carton, benchmark: pytest_benchmark.plugin.Ben
     )
 
 
-@pytest.mark.parametrize("amount,result_amount", [(10**n, 10**k) for n in range(4) for k in range(n)])
+@pytest.mark.parametrize("amount,result_amount", [(10**n, 1) for n in range(6)])
 def test_benchmark_select(
     carton: Carton, benchmark: pytest_benchmark.plugin.BenchmarkFixture, amount: int, result_amount: int
 ):
