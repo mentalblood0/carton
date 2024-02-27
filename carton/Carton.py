@@ -32,13 +32,11 @@ class Carton:
             (),
         )
         execute("create index if not exists carton_time on carton(time)", ())
-        execute("create index if not exists carton_package on carton(package)", ())
+        execute("create index if not exists carton_id_package on carton(id,package)", ())
         execute("create index if not exists carton_key on carton(key)", ())
         execute("create index if not exists carton_value on carton(value)", ())
         execute("create index if not exists carton_key_value on carton(key,value)", ())
         execute("create index if not exists carton_actual_key_value on carton(actual,key,value)", ())
-        # execute("create index if not exists carton_id_key on carton(id,key)", ())
-        # execute("create index if not exists carton_id_value on carton(id,value)", ())
         execute("create index if not exists carton_package_key_value on carton(package,key,value)", ())
 
     def insert(
@@ -93,7 +91,8 @@ class Carton:
         if get:
             query += f" and key in ({','.join(str(self.key_id(k)) for k in get)})"
         query += " order by package) as c"
-        for c, (k, v) in enumerate((present or {}).items()):
+
+        for c, (k, v) in enumerate(sorted((present or {}).items(), key=lambda p: "a" if p[1] is None else "b")):
             query += (
                 f" join carton as c{c} on c.package=c{c}.package"
                 f" and c{c}.actual=1 and c{c}.key={self.key_id(k)} and c{c}.value"
@@ -104,9 +103,7 @@ class Carton:
                 query += " is not null"
             else:
                 query += f"='{v}'"
-        # print(query)
-        # for row in self.execute()(f"explain query plan {query}", ()):
-        #     print(row)
+
         current = {}
         for row in self.execute()(query, ()):
             if "package" in current and current["package"] != row[0]:

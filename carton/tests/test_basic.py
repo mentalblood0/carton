@@ -119,3 +119,19 @@ def test_benchmark_select_from_many_same_value(
     carton.insert((i, {str(i): "a"}) for i in range(amount))
     benchmark(lambda: list(carton.select({str(amount - 1): "a"})))
     assert list(carton.select({str(amount - 1): "a"})) == [{"package": amount - 1, str(amount - 1): "a"}]
+
+
+@pytest.mark.parametrize("amount", [10**n for n in range(6)])
+def test_benchmark_select_from_many_by_two_keys(
+    carton: Carton, benchmark: pytest_benchmark.plugin.BenchmarkFixture, amount: int
+):
+    old = None
+    a_new = "a"
+    b_new = "b"
+    for i in range(amount):
+        carton.insert([(i, {"a": old, "b": old})])
+        carton.insert([(i, {"a": a_new, "b": b_new})])
+    carton.insert([(amount, {"a": old, "b": old})])
+    carton.insert([(amount, {"a": a_new})])
+    benchmark(lambda: list(carton.select({"a": a_new, "b": None})))
+    assert list(carton.select({"a": a_new, "b": None})) == [{"package": amount, "a": a_new, "b": old}]
