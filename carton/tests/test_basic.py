@@ -90,7 +90,9 @@ def test_new(carton: Carton):
 
 
 @pytest.mark.parametrize("amount", [10**n for n in range(6)])
-def test_benchmark_select_new(carton: Carton, benchmark: pytest_benchmark.plugin.BenchmarkFixture, amount: int):
+def test_benchmark_select_from_many_old(
+    carton: Carton, benchmark: pytest_benchmark.plugin.BenchmarkFixture, amount: int
+):
     old = "1"
     new = "2"
     for i in range(amount):
@@ -102,7 +104,7 @@ def test_benchmark_select_new(carton: Carton, benchmark: pytest_benchmark.plugin
 
 
 @pytest.mark.parametrize("amount", [10**n for n in range(6)])
-def test_benchmark_select_many_same_key(
+def test_benchmark_select_from_many_same_key(
     carton: Carton, benchmark: pytest_benchmark.plugin.BenchmarkFixture, amount: int
 ):
     carton.insert((i, {"a": str(i)}) for i in range(amount))
@@ -111,7 +113,7 @@ def test_benchmark_select_many_same_key(
 
 
 @pytest.mark.parametrize("amount", [10**n for n in range(6)])
-def test_benchmark_select_many_same_value(
+def test_benchmark_select_from_many_same_value(
     carton: Carton, benchmark: pytest_benchmark.plugin.BenchmarkFixture, amount: int
 ):
     carton.insert((i, {str(i): "a"}) for i in range(amount))

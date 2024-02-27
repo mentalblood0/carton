@@ -35,9 +35,11 @@ class Carton:
         execute("create index if not exists carton_package on carton(package)", ())
         execute("create index if not exists carton_key on carton(key)", ())
         execute("create index if not exists carton_value on carton(value)", ())
-        execute("create index if not exists carton_id_key on carton(id,key)", ())
-        execute("create index if not exists carton_id_value on carton(id,value)", ())
-        execute("create index if not exists carton_package_key_value on carton(package,actual,key,value)", ())
+        execute("create index if not exists carton_key_value on carton(key,value)", ())
+        execute("create index if not exists carton_actual_key_value on carton(actual,key,value)", ())
+        # execute("create index if not exists carton_id_key on carton(id,key)", ())
+        # execute("create index if not exists carton_id_value on carton(id,value)", ())
+        execute("create index if not exists carton_package_key_value on carton(package,key,value)", ())
 
     def insert(
         self,
@@ -102,6 +104,9 @@ class Carton:
                 query += " is not null"
             else:
                 query += f"='{v}'"
+        # print(query)
+        # for row in self.execute()(f"explain query plan {query}", ()):
+        #     print(row)
         current = {}
         for row in self.execute()(query, ()):
             if "package" in current and current["package"] != row[0]:
