@@ -33,8 +33,10 @@ class Carton:
         )
         execute("create index if not exists carton_time on carton(time)", ())
         execute("create index if not exists carton_package on carton(package)", ())
+        execute("create index if not exists carton_key on carton(key)", ())
         execute("create index if not exists carton_value on carton(value)", ())
         execute("create index if not exists carton_id_key on carton(id,key)", ())
+        execute("create index if not exists carton_id_value on carton(id,value)", ())
         execute("create index if not exists carton_package_key_value on carton(package,actual,key,value)", ())
 
     def insert(

@@ -91,6 +91,29 @@ def test_new(carton: Carton):
 
 @pytest.mark.parametrize("amount", [10**n for n in range(6)])
 def test_benchmark_select_new(carton: Carton, benchmark: pytest_benchmark.plugin.BenchmarkFixture, amount: int):
-    carton.insert([(0, {"a": f"a_{i}"}) for i in range(amount)])
-    benchmark(lambda: list(carton.select({"a": f"a_{amount-1}"})))
-    assert list(carton.select({"a": f"a_{amount-1}"})) == [{"package": 0, "a": f"a_{amount-1}"}]
+    old = "1"
+    new = "2"
+    for i in range(amount):
+        carton.insert([(i, {"a": old})])
+        carton.insert([(i, {"a": new})])
+    carton.insert([(amount, {"a": old})])
+    benchmark(lambda: list(carton.select({"a": old})))
+    assert list(carton.select({"a": old})) == [{"package": amount, "a": old}]
+
+
+@pytest.mark.parametrize("amount", [10**n for n in range(6)])
+def test_benchmark_select_many_same_key(
+    carton: Carton, benchmark: pytest_benchmark.plugin.BenchmarkFixture, amount: int
+):
+    carton.insert((i, {"a": str(i)}) for i in range(amount))
+    benchmark(lambda: list(carton.select({"a": str(amount - 1)})))
+    assert list(carton.select({"a": str(amount - 1)})) == [{"package": amount - 1, "a": str(amount - 1)}]
+
+
+@pytest.mark.parametrize("amount", [10**n for n in range(6)])
+def test_benchmark_select_many_same_value(
+    carton: Carton, benchmark: pytest_benchmark.plugin.BenchmarkFixture, amount: int
+):
+    carton.insert((i, {str(i): "a"}) for i in range(amount))
+    benchmark(lambda: list(carton.select({str(amount - 1): "a"})))
+    assert list(carton.select({str(amount - 1): "a"})) == [{"package": amount - 1, str(amount - 1): "a"}]
