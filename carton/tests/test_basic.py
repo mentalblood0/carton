@@ -4,7 +4,7 @@ import pytest
 import pytest_benchmark.plugin
 
 from ..Carton import Carton
-from .common import carton
+from .common import *
 
 
 @pytest.mark.parametrize("amount", [10**n for n in range(5)])

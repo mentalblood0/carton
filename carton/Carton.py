@@ -29,7 +29,7 @@ class Carton:
                 k_v = list(p[1].items())
                 p_id = cursor.execute(
                     "insert into carton(package,key,value)"
-                    f"values(coalesce((select max(package)from carton),-1)+1,?,?)"
+                    "values(coalesce((select max(package)from carton),-1)+1,?,?)"
                     "returning package",
                     (self.key_id(k_v[0][0]), k_v[0][1]),
                 ).__next__()[0]
@@ -41,16 +41,16 @@ class Carton:
     def key_id(self, key: str) -> int:
         if key not in self.key_id_cache:
             try:
-                self.key_id_cache[key] = next(self.db.cursor().execute(f"select id from keys where key=?", (key,)))[0]
+                self.key_id_cache[key] = next(self.db.cursor().execute("select id from keys where key=?", (key,)))[0]
             except StopIteration:
                 self.key_id_cache[key] = next(
-                    self.db.cursor().execute(f"insert into keys(key)values(?)returning *", (key,))
+                    self.db.cursor().execute("insert into keys(key)values(?)returning *", (key,))
                 )[0]
         return self.key_id_cache[key]
 
     def id_key(self, i: int) -> str:
         if i not in self.id_key_cache:
-            self.id_key_cache[i] = next(self.db.cursor().execute(f"select key from keys where id=?", (i,)))[0]
+            self.id_key_cache[i] = next(self.db.cursor().execute("select key from keys where id=?", (i,)))[0]
         return self.id_key_cache[i]
 
     def select(

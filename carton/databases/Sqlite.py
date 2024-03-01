@@ -13,8 +13,8 @@ class SqliteCursor(Cursor):
     def execute(self, query: str, arguments: typing.Tuple[typing.Any, ...] = ()):
         return self.cursor.execute(query, arguments)
 
-    def executemany(self, query: str, arguments: typing.List[typing.Tuple[typing.Any, ...]] = []):
-        return self.cursor.executemany(query, arguments)
+    def executemany(self, query: str, arguments: typing.Union[typing.List[typing.Tuple[typing.Any, ...]], None] = None):
+        return self.cursor.executemany(query, arguments or [])
 
 
 @dataclasses.dataclass
@@ -29,7 +29,7 @@ class Sqlite(Database):
 
     def create(self):
         cursor = self.cursor()
-        cursor.execute(f"create table if not exists keys(id integer primary key autoincrement, key text unique)", ())
+        cursor.execute("create table if not exists keys(id integer primary key autoincrement, key text unique)", ())
         cursor.execute("create index if not exists keys_key on keys(key)", ())
         cursor.execute(
             "create table if not exists carton(id integer primary key autoincrement,"

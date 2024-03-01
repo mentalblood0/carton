@@ -13,8 +13,8 @@ class PostgresCursor(Cursor):
         self.cursor.execute(query.replace("?", "%s"), arguments)
         return (r for r in self.cursor)
 
-    def executemany(self, query: str, arguments: typing.List[typing.Tuple[typing.Any, ...]] = []):
-        self.cursor.executemany(query.replace("?", "%s"), arguments)
+    def executemany(self, query: str, arguments: typing.Union[typing.List[typing.Tuple[typing.Any, ...]], None] = None):
+        self.cursor.executemany(query.replace("?", "%s"), arguments or [])
         return (r for r in self.cursor)
 
 
@@ -35,7 +35,8 @@ class Postgres(Database):
         cursor.execute(
             "create table if not exists carton(id bigserial primary key,"
             "time timestamp default(now() at time zone 'utc') not null,package bigint not null,"
-            "key integer not null,value text,actual boolean default(true) not null,foreign key(key) references keys(id))",
+            "key integer not null,value text,actual boolean default(true) not null,"
+            "foreign key(key) references keys(id))",
             (),
         )
         cursor.execute("create index if not exists carton_time on carton(time)", ())
