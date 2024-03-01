@@ -90,7 +90,8 @@ def test_benchmark_select_from_many_old(
     old = "1"
     new = "2"
     carton.insert([(i, {"a": old}) for i in range(amount)])
-    carton.insert([(i, {"a": new}) for i in range(amount)] + [(amount, {"a": old})])
+    carton.insert([(i, {"a": new}) for i in range(amount)])
+    carton.insert([(amount, {"a": old})])
     benchmark(lambda: list(carton.select({"a": old})))
     assert list(carton.select({"a": old})) == [{"package": amount, "a": old}]
 
@@ -121,9 +122,7 @@ def test_benchmark_select_from_many_by_two_keys(
     a_new = "a"
     b_new = "b"
     carton.insert([(i, {"a": old, "b": old}) for i in range(amount)])
-    carton.insert(
-        [(i, {"a": a_new, "b": b_new}) for i in range(amount)]
-        + [(amount, {"a": old, "b": old}), (amount, {"a": a_new})]
-    )
+    carton.insert([(i, {"a": a_new, "b": b_new}) for i in range(amount)])
+    carton.insert([(amount, {"a": old, "b": old}), (amount, {"a": a_new})])
     benchmark(lambda: list(carton.select({"a": a_new, "b": None})))
     assert list(carton.select({"a": a_new, "b": None})) == [{"package": amount, "a": a_new, "b": old}]
