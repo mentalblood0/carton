@@ -1,6 +1,6 @@
 import sqlite3
 
-import psycopg2
+# import psycopg2
 import pytest
 
 from .. import databases
