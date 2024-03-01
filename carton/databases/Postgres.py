@@ -1,0 +1,48 @@
+import dataclasses
+import typing
+
+from ..Cursor import Cursor
+from ..Database import Database
+
+
+@dataclasses.dataclass
+class PostgresCursor(Cursor):
+    cursor: typing.Any
+
+    def execute(self, query: str, arguments: typing.Tuple[typing.Any, ...] = ()):
+        self.cursor.execute(query.replace("?", "%s"), arguments)
+        return (r for r in self.cursor)
+
+    def executemany(self, query: str, arguments: typing.List[typing.Tuple[typing.Any, ...]] = []):
+        self.cursor.executemany(query.replace("?", "%s"), arguments)
+        return (r for r in self.cursor)
+
+
+@dataclasses.dataclass
+class Postgres(Database):
+    connection: typing.Any
+
+    def cursor(self):
+        return PostgresCursor(self.connection.cursor())
+
+    def commit(self):
+        self.connection.commit()
+
+    def create(self):
+        cursor = self.cursor()
+        cursor.execute("create table if not exists keys(id serial primary key, key text unique)", ())
+        cursor.execute("create index if not exists keys_key on keys(key)", ())
+        cursor.execute(
+            "create table if not exists carton(id bigserial primary key,"
+            "time timestamp default(now() at time zone 'utc') not null,package bigint not null,"
+            "key integer not null,value text,actual boolean default(true) not null,foreign key(key) references keys(id))",
+            (),
+        )
+        cursor.execute("create index if not exists carton_time on carton(time)", ())
+        cursor.execute("create index if not exists carton_id_package on carton(id,package)", ())
+        cursor.execute("create index if not exists carton_key on carton(key)", ())
+        cursor.execute("create index if not exists carton_value on carton(value)", ())
+        cursor.execute("create index if not exists carton_key_value on carton(key,value)", ())
+        cursor.execute("create index if not exists carton_actual_key_value on carton(actual,key,value)", ())
+        cursor.execute("create index if not exists carton_package_key_value on carton(package,key,value)", ())
+        self.commit()

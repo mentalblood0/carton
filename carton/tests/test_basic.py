@@ -1,16 +1,10 @@
 import random
-import sqlite3
 
 import pytest
 import pytest_benchmark.plugin
 
 from ..Carton import Carton
-
-
-@pytest.fixture()
-def carton():
-    connection = sqlite3.connect(":memory:")
-    return Carton(execute=lambda: connection.cursor().execute, executemany=lambda: connection.cursor().executemany)
+from .common import carton
 
 
 @pytest.mark.parametrize("amount", [10**n for n in range(5)])
@@ -95,10 +89,8 @@ def test_benchmark_select_from_many_old(
 ):
     old = "1"
     new = "2"
-    for i in range(amount):
-        carton.insert([(i, {"a": old})])
-        carton.insert([(i, {"a": new})])
-    carton.insert([(amount, {"a": old})])
+    carton.insert([(i, {"a": old}) for i in range(amount)])
+    carton.insert([(i, {"a": new}) for i in range(amount)] + [(amount, {"a": old})])
     benchmark(lambda: list(carton.select({"a": old})))
     assert list(carton.select({"a": old})) == [{"package": amount, "a": old}]
 
@@ -128,10 +120,10 @@ def test_benchmark_select_from_many_by_two_keys(
     old = None
     a_new = "a"
     b_new = "b"
-    for i in range(amount):
-        carton.insert([(i, {"a": old, "b": old})])
-        carton.insert([(i, {"a": a_new, "b": b_new})])
-    carton.insert([(amount, {"a": old, "b": old})])
-    carton.insert([(amount, {"a": a_new})])
+    carton.insert([(i, {"a": old, "b": old}) for i in range(amount)])
+    carton.insert(
+        [(i, {"a": a_new, "b": b_new}) for i in range(amount)]
+        + [(amount, {"a": old, "b": old}), (amount, {"a": a_new})]
+    )
     benchmark(lambda: list(carton.select({"a": a_new, "b": None})))
     assert list(carton.select({"a": a_new, "b": None})) == [{"package": amount, "a": a_new, "b": old}]
