@@ -64,7 +64,7 @@ class Carton:
             query += f" and package not in ({','.join(str(e) for e in exclude)})"
         if get:
             query += f" and key in ({','.join(str(self.key_id(k)) for k in get)})"
-        query += " order by package) as c"
+        query += ") as c"
 
         for c, (k, v) in enumerate(sorted((present or {}).items(), key=lambda p: "a" if p[1] is None else "b")):
             query += (
@@ -77,6 +77,7 @@ class Carton:
                 query += " is not null"
             else:
                 query += f"='{v}'"
+        query += " order by c.package"
 
         current = {}
         for row in self.db.cursor().execute(query, ()):
