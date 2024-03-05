@@ -53,34 +53,14 @@ class Carton:
             self.id_key_cache[i] = next(self.db.cursor().execute("select key from keys where id=?", (i,)))[0]
         return self.id_key_cache[i]
 
-    def select(
-        self,
-        present: typing.Union[typing.Dict[str, typing.Union[str, bool, None]], None] = None,
-        get: typing.Union[typing.Set[str], None] = None,
-        exclude: typing.Union[typing.Set[int], None] = None,
-    ):
-        query = "select c.package,c.key,c.value from (select package,key,value from carton where actual=true"
-        if exclude:
-            query += f" and package not in ({','.join(str(e) for e in exclude)})"
-        if get:
-            query += f" and key in ({','.join(str(self.key_id(k)) for k in get)})"
-        query += ") as c"
-
-        for c, (k, v) in enumerate(sorted((present or {}).items(), key=lambda p: "a" if p[1] is None else "b")):
-            query += (
-                f" join carton as c{c} on c.package=c{c}.package"
-                f" and c{c}.actual=true and c{c}.key={self.key_id(k)} and c{c}.value"
-            )
-            if v is None:
-                query += " is null"
-            elif v is True:
-                query += " is not null"
-            else:
-                query += f"='{v}'"
-        query += " order by c.package"
-
+    def select(self, key: str, value: typing.Union[str, None, bool]):
+        query = (
+            "select c.package,c.key,c.value from (select * from carton where actual=true order by package) as c"
+            + f" join carton as c1 on c1.actual=true and c.package=c1.package"
+            + f" and c1.key={self.key_id(key)} and c1.value"
+        ) + (" is null" if value is None else (" is not null" if value is True else f"='{value}'"))
         current = {}
-        for row in self.db.cursor().execute(query, ()):
+        for row in self.db.cursor().execute(query):
             if "package" in current and current["package"] != row[0]:
                 yield current
                 current = {}

@@ -38,10 +38,6 @@ class Sqlite(Database):
             (),
         )
         cursor.execute("create index if not exists carton_time on carton(time)", ())
-        cursor.execute("create index if not exists carton_id_package on carton(id,package)", ())
-        cursor.execute("create index if not exists carton_key on carton(key)", ())
-        cursor.execute("create index if not exists carton_value on carton(value)", ())
-        cursor.execute("create index if not exists carton_key_value on carton(key,value)", ())
         cursor.execute("create index if not exists carton_actual_key_value on carton(actual,key,value)", ())
         cursor.execute("create index if not exists carton_package_key_value on carton(package,key,value)", ())
         self.commit()
