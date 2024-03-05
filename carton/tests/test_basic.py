@@ -1,3 +1,5 @@
+import uuid
+
 import pytest
 import pytest_benchmark.plugin
 
@@ -5,12 +7,55 @@ from ..Carton import Carton
 from .common import *
 
 
-@pytest.mark.parametrize("amount", [10**n for n in range(8)])
+@pytest.mark.parametrize("amount", [10**n for n in range(5)])
 def test_benchmark_insert(carton: Carton, benchmark: pytest_benchmark.plugin.BenchmarkFixture, amount: int):
     carton.insert((None, {"key": f"value_{i}", "a": "b", "file": f"path_{i}"}) for i in range(amount))
     benchmark.pedantic(
         lambda: carton.insert([(None, {"key": f"value_{amount}", "a": "b", "file": f"path_{amount}"})]), iterations=1
     )
+
+
+def insert(carton: Carton, start: int, amount: int, batch: int, update: bool = True):
+    for i in range(amount // batch):
+        carton.insert(
+            [
+                (
+                    start + i * batch + j,
+                    {
+                        "file": uuid.uuid4().hex,
+                        "message_id": uuid.uuid4().hex,
+                        "lifecycle_id": uuid.uuid4().hex,
+                        "schema": None,
+                        "sign": None,
+                        "type": None,
+                    },
+                )
+                for j in range(batch)
+            ]
+        )
+        if update:
+            carton.insert([(start + i * batch + j, {"schema": "1"}) for j in range(batch)])
+
+
+@pytest.mark.parametrize("amount", [10**n for n in range(5)])
+def test_benchmark_insert_complex(
+    carton: Carton, benchmark: pytest_benchmark.plugin.BenchmarkFixture, amount: int, batch: int = 100
+):
+    insert(carton, 0, amount, batch)
+    benchmark.pedantic(lambda: insert(carton, amount, 1, batch))
+
+
+@pytest.mark.parametrize("amount", [10**n for n in range(5)])
+def test_benchmark_select_complex(
+    carton: Carton, benchmark: pytest_benchmark.plugin.BenchmarkFixture, amount: int, batch: int = 100
+):
+    insert(carton, 0, amount, batch)
+    insert(carton, amount, batch, batch, False)
+
+    def select():
+        assert len(list(carton.select("schema", None))) == batch
+
+    benchmark(select)
 
 
 def test_present(carton: Carton):
