@@ -56,7 +56,7 @@ class Carton:
     def select(self, key: str, value: typing.Union[str, None, bool]):
         query = (
             "select c.package,c.key,c.value from (select * from carton where actual=true order by package) as c"
-            + f" join carton as c1 on c1.actual=true and c.package=c1.package"
+            + " join carton as c1 on c1.actual=true and c.package=c1.package"
             + f" and c1.key={self.key_id(key)} and c1.value"
         ) + (" is null" if value is None else (" is not null" if value is True else f"='{value}'"))
         current = {}

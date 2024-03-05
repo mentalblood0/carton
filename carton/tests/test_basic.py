@@ -1,5 +1,3 @@
-import random
-
 import pytest
 import pytest_benchmark.plugin
 
@@ -7,11 +5,11 @@ from ..Carton import Carton
 from .common import *
 
 
-@pytest.mark.parametrize("amount", [10**n for n in range(5)])
+@pytest.mark.parametrize("amount", [10**n for n in range(8)])
 def test_benchmark_insert(carton: Carton, benchmark: pytest_benchmark.plugin.BenchmarkFixture, amount: int):
+    carton.insert((None, {"key": f"value_{i}", "a": "b", "file": f"path_{i}"}) for i in range(amount))
     benchmark.pedantic(
-        lambda: carton.insert((None, {"key": f"value_{i}", "a": "b", "file": f"path_{i}"}) for i in range(amount)),
-        iterations=1,
+        lambda: carton.insert([(None, {"key": f"value_{amount}", "a": "b", "file": f"path_{amount}"})]), iterations=1
     )
 
 
