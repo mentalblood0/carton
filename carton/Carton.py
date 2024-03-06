@@ -55,12 +55,13 @@ class Carton:
 
     def select(self, key: str, value: typing.Union[str, None, bool]):
         for (package,) in self.db.cursor().execute(
-            f"select package from carton where actual=true and key={self.key_id(key)} and value"
-            + (" is null" if value is None else (" is not null" if value is True else f"='{value}'"))
+            "select package from carton where actual=true and key=? and value"
+            + (" is null" if value is None else (" is not null" if value is True else "=?")),
+            (self.key_id(key), value) if isinstance(value, str) else (self.key_id(key),),
         ):
             yield {
                 self.id_key(key): value
                 for key, value in self.db.cursor().execute(
-                    f"select key,value from carton where actual=true and package={package}"
+                    "select key,value from carton where actual=true and package=?", (package,)
                 )
             } | {"package": package}

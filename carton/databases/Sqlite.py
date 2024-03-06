@@ -11,6 +11,7 @@ class SqliteCursor(Cursor):
     cursor: sqlite3.Cursor
 
     def execute(self, query: str, arguments: typing.Tuple[typing.Any, ...] = ()):
+        print(query, arguments)
         return self.cursor.execute(query, arguments)
 
     def executemany(self, query: str, arguments: typing.Union[typing.List[typing.Tuple[typing.Any, ...]], None] = None):
