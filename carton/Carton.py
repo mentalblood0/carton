@@ -46,6 +46,7 @@ class Carton:
                 self.key_id_cache[key] = next(
                     self.db.cursor().execute("insert into keys(key)values(?)returning *", (key,))
                 )[0]
+                self.db.commit()
         return self.key_id_cache[key]
 
     def id_key(self, i: int) -> str:
