@@ -15,39 +15,60 @@ def test_benchmark_insert(carton: Carton, benchmark: pytest_benchmark.plugin.Ben
     )
 
 
+def count(carton: Carton):
+    return next(carton.db.cursor().execute("select count(distinct package) from carton"))[0]
+
+
 def insert(carton: Carton, start: int, amount: int, batch: int, update: bool = True):
+    before = None
+    if start + amount <= 10:
+        before = count(carton)
     for i in range(amount // batch):
         carton.insert(
             [
                 (
-                    start + i * batch + j,
+                    None,
                     {
                         "file": uuid.uuid4().hex,
-                        "message_id": uuid.uuid4().hex,
-                        "lifecycle_id": uuid.uuid4().hex,
+                        "digest": uuid.uuid4().hex,
                         "schema": None,
                         "sign": None,
                         "type": None,
+                        "unique_message_id": None,
+                        "unique_message": None,
+                        "unique_lifecycle_id": None,
+                        "processor_number": None,
                     },
                 )
-                for j in range(batch)
+                for _ in range(batch)
             ]
         )
         if update:
-            carton.insert([(start + i * batch + j, {"schema": "1"}) for j in range(batch)])
+            carton.insert(
+                [
+                    (
+                        start + i * batch + j,
+                        {"schema": "1", "message_id": uuid.uuid4().hex, "lifecycle_id": uuid.uuid4().hex},
+                    )
+                    for j in range(batch)
+                ]
+            )
+    if before is not None:
+        after = count(carton)
+        assert after - before == amount
 
 
-@pytest.mark.parametrize("amount", [10**n for n in range(5)])
+@pytest.mark.parametrize("amount", [10**n for n in range(7)])
 def test_benchmark_insert_complex(
-    carton: Carton, benchmark: pytest_benchmark.plugin.BenchmarkFixture, amount: int, batch: int = 100
+    carton: Carton, benchmark: pytest_benchmark.plugin.BenchmarkFixture, amount: int, batch: int = 1
 ):
     insert(carton, 0, amount, batch)
-    benchmark.pedantic(lambda: insert(carton, amount, 1, batch))
+    benchmark.pedantic(lambda: insert(carton, amount, 1, batch), iterations=1)
 
 
-@pytest.mark.parametrize("amount", [10**n for n in range(5)])
+@pytest.mark.parametrize("amount", [10**n for n in range(7)])
 def test_benchmark_select_complex(
-    carton: Carton, benchmark: pytest_benchmark.plugin.BenchmarkFixture, amount: int, batch: int = 100
+    carton: Carton, benchmark: pytest_benchmark.plugin.BenchmarkFixture, amount: int, batch: int = 1
 ):
     insert(carton, 0, amount, batch)
     insert(carton, amount, batch, batch, False)
@@ -55,7 +76,7 @@ def test_benchmark_select_complex(
     def select():
         assert len(list(carton.select("schema", None))) == batch
 
-    benchmark(select)
+    benchmark.pedantic(select, iterations=1)
 
 
 def test_present(carton: Carton):
