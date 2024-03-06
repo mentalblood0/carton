@@ -19,7 +19,7 @@ def count(carton: Carton):
     return next(carton.db.cursor().execute("select count(distinct package) from carton"))[0]
 
 
-def insert(carton: Carton, start: int, amount: int, batch: int, update: bool = True):
+def insert(carton: Carton, start: int, amount: int, batch: int, *, update: bool = True):
     before = None
     if start + amount <= 10:
         before = count(carton)
@@ -71,7 +71,7 @@ def test_benchmark_select_complex(
     carton: Carton, benchmark: pytest_benchmark.plugin.BenchmarkFixture, amount: int, batch: int = 1
 ):
     insert(carton, 0, amount, batch)
-    insert(carton, amount, batch, batch, False)
+    insert(carton, amount, batch, batch, update=False)
 
     def select():
         assert len(list(carton.select("schema", None))) == batch
