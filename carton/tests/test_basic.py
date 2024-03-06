@@ -58,7 +58,7 @@ def insert(carton: Carton, start: int, amount: int, batch: int, update: bool = T
         assert after - before == amount
 
 
-@pytest.mark.parametrize("amount", [10**n for n in range(7)])
+@pytest.mark.parametrize("amount", [10**n for n in range(5)])
 def test_benchmark_insert_complex(
     carton: Carton, benchmark: pytest_benchmark.plugin.BenchmarkFixture, amount: int, batch: int = 1
 ):
@@ -66,7 +66,7 @@ def test_benchmark_insert_complex(
     benchmark.pedantic(lambda: insert(carton, amount, 1, batch), iterations=1)
 
 
-@pytest.mark.parametrize("amount", [10**n for n in range(7)])
+@pytest.mark.parametrize("amount", [10**n for n in range(5)])
 def test_benchmark_select_complex(
     carton: Carton, benchmark: pytest_benchmark.plugin.BenchmarkFixture, amount: int, batch: int = 1
 ):
@@ -123,23 +123,23 @@ def test_benchmark_select_from_many_old(
     carton.insert([(i, {"a": old}) for i in range(amount)])
     carton.insert([(i, {"a": new}) for i in range(amount)])
     carton.insert([(amount, {"a": old})])
-    benchmark(lambda: list(carton.select("a", old)))
+    benchmark.pedantic(lambda: list(carton.select("a", old)), iterations=1)
     assert list(carton.select("a", old)) == [{"package": amount, "a": old}]
 
 
-@pytest.mark.parametrize("amount", [10**n for n in range(6)])
+@pytest.mark.parametrize("amount", [10**n for n in range(7)])
 def test_benchmark_select_from_many_same_key(
     carton: Carton, benchmark: pytest_benchmark.plugin.BenchmarkFixture, amount: int
 ):
     carton.insert((i, {"a": str(i)}) for i in range(amount))
-    benchmark(lambda: list(carton.select("a", str(amount - 1))))
+    benchmark.pedantic(lambda: list(carton.select("a", str(amount - 1))), iterations=1)
     assert list(carton.select("a", str(amount - 1))) == [{"package": amount - 1, "a": str(amount - 1)}]
 
 
-@pytest.mark.parametrize("amount", [10**n for n in range(6)])
+@pytest.mark.parametrize("amount", [10**n for n in range(7)])
 def test_benchmark_select_from_many_same_value(
     carton: Carton, benchmark: pytest_benchmark.plugin.BenchmarkFixture, amount: int
 ):
     carton.insert((i, {str(i): "a"}) for i in range(amount))
-    benchmark(lambda: list(carton.select(str(amount - 1), "a")))
+    benchmark.pedantic(lambda: list(carton.select(str(amount - 1), "a")), iterations=1)
     assert list(carton.select(str(amount - 1), "a")) == [{"package": amount - 1, str(amount - 1): "a"}]

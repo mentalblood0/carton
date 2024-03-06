@@ -40,6 +40,8 @@ class Postgres(Database):
             (),
         )
         cursor.execute("create index if not exists carton_time on carton(time)", ())
-        cursor.execute("create index if not exists carton_actual_key_value on carton(actual,key,value)", ())
-        cursor.execute("create index if not exists carton_package_key_value on carton(package,key,value)", ())
+        cursor.execute("create index if not exists carton_actual_key_value on carton(key,value) where actual=true", ())
+        cursor.execute(
+            "create index if not exists carton_package_key_value on carton(package,key,value) where actual=true", ()
+        )
         self.commit()
