@@ -54,20 +54,13 @@ class Carton:
         return self.id_key_cache[i]
 
     def select(self, key: str, value: typing.Union[str, None, bool]):
-        query = (
-            (
-                "select c.package,c.key,c.value from (select * from carton where actual=true order by package) as c"
-                + " join carton as c1 on c1.actual=true and c.package=c1.package"
-                + f" and c1.key={self.key_id(key)} and c1.value"
-            )
+        for (package,) in self.db.cursor().execute(
+            f"select package from carton where actual=true and key={self.key_id(key)} and value"
             + (" is null" if value is None else (" is not null" if value is True else f"='{value}'"))
-            + " order by c.package"
-        )
-        current = {}
-        for row in self.db.cursor().execute(query):
-            if "package" in current and current["package"] != row[0]:
-                yield current
-                current = {}
-            current.update({"package": row[0], self.id_key(row[1]): row[2]})
-        if "package" in current:
-            yield current
+        ):
+            yield {
+                self.id_key(key): value
+                for key, value in self.db.cursor().execute(
+                    f"select key,value from carton where actual=true and package={package}"
+                )
+            } | {"package": package}

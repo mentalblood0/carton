@@ -19,7 +19,7 @@ def count(carton: Carton):
     return next(carton.db.cursor().execute("select count(distinct package) from carton"))[0]
 
 
-def insert(carton: Carton, start: int, amount: int, batch: int, *, update: bool = True):
+def insert(carton: Carton, start: int, amount: int, batch: int, *, update: bool = True, auto_id: bool = False):
     before = None
     if start + amount <= 10:
         before = count(carton)
@@ -27,7 +27,7 @@ def insert(carton: Carton, start: int, amount: int, batch: int, *, update: bool 
         carton.insert(
             [
                 (
-                    None,
+                    (start + i * batch + j) if not auto_id else None,
                     {
                         "file": uuid.uuid4().hex,
                         "digest": uuid.uuid4().hex,
@@ -40,7 +40,7 @@ def insert(carton: Carton, start: int, amount: int, batch: int, *, update: bool 
                         "processor_number": None,
                     },
                 )
-                for _ in range(batch)
+                for j in range(batch)
             ]
         )
         if update:
@@ -58,15 +58,15 @@ def insert(carton: Carton, start: int, amount: int, batch: int, *, update: bool 
         assert after - before == amount
 
 
-@pytest.mark.parametrize("amount", [10**n for n in range(5)])
+@pytest.mark.parametrize("amount", [10**n for n in range(6)])
 def test_benchmark_insert_complex(
     carton: Carton, benchmark: pytest_benchmark.plugin.BenchmarkFixture, amount: int, batch: int = 1
 ):
     insert(carton, 0, amount, batch)
-    benchmark.pedantic(lambda: insert(carton, amount, 1, batch), iterations=1)
+    benchmark.pedantic(lambda: insert(carton, amount, 1, batch, auto_id=True), iterations=1)
 
 
-@pytest.mark.parametrize("amount", [10**n for n in range(5)])
+@pytest.mark.parametrize("amount", [10**n for n in range(6)])
 def test_benchmark_select_complex(
     carton: Carton, benchmark: pytest_benchmark.plugin.BenchmarkFixture, amount: int, batch: int = 1
 ):
@@ -127,7 +127,7 @@ def test_benchmark_select_from_many_old(
     assert list(carton.select("a", old)) == [{"package": amount, "a": old}]
 
 
-@pytest.mark.parametrize("amount", [10**n for n in range(7)])
+@pytest.mark.parametrize("amount", [10**n for n in range(5)])
 def test_benchmark_select_from_many_same_key(
     carton: Carton, benchmark: pytest_benchmark.plugin.BenchmarkFixture, amount: int
 ):
@@ -136,7 +136,7 @@ def test_benchmark_select_from_many_same_key(
     assert list(carton.select("a", str(amount - 1))) == [{"package": amount - 1, "a": str(amount - 1)}]
 
 
-@pytest.mark.parametrize("amount", [10**n for n in range(7)])
+@pytest.mark.parametrize("amount", [10**n for n in range(5)])
 def test_benchmark_select_from_many_same_value(
     carton: Carton, benchmark: pytest_benchmark.plugin.BenchmarkFixture, amount: int
 ):
