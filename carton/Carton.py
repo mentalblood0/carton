@@ -61,8 +61,11 @@ class Carton:
             (self.key_id(key), value) if isinstance(value, str) else (self.key_id(key),),
         ):
             yield {
-                self.id_key(key): value
-                for key, value in self.db.cursor().execute(
-                    "select key,value from carton where actual=true and package=?", (package,)
-                )
-            } | {"package": package}
+                **{
+                    self.id_key(key): value
+                    for key, value in self.db.cursor().execute(
+                        "select key,value from carton where actual=true and package=?", (package,)
+                    )
+                },
+                **{"package": package},
+            }
