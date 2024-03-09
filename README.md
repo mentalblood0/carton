@@ -43,7 +43,7 @@ So `select` operation implemented as taking `predicate` and returning all corres
 
 `select` method is implemented as generator avoiding excessive memory usage and thick queries
 
-There is no need to generate package identifier `package` as it taken to be `COALESCE((SELECT MAX(package) FROM carton), -1) + 1` by default
+There is no need to generate subject identifier `subject` as it taken to be `COALESCE((SELECT MAX(subject) FROM sentences), -1) + 1` by default
 
 ## Concrete RDB types
 
