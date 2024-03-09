@@ -54,9 +54,6 @@ class Carton:
             self.db.commit()
             return result
 
-    def id_key(self, i: int) -> str:
-        return next(self.db.cursor().execute("select predicate from predicates where id=?", (i,)))[0]
-
     def select(self, key: str, value: typing.Union[str, None]):
         for (subject,) in self.db.cursor().execute(
             "select subject from sentences where actual=true and predicate=?",
@@ -64,9 +61,11 @@ class Carton:
         ):
             yield dict(
                 [
-                    self.key_value(self.id_key(predicate_id))
-                    for (predicate_id,) in self.db.cursor().execute(
-                        "select predicate from sentences where actual=true and subject=?", (subject,)
+                    self.key_value(predicate)
+                    for (predicate,) in self.db.cursor().execute(
+                        "select p.predicate from sentences as s join predicates as p "
+                        "on s.predicate=p.id and s.actual=true and s.subject=?",
+                        (subject,),
                     )
                 ]
                 + [("package", subject)]
