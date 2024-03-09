@@ -35,8 +35,7 @@ class Postgres(Database):
         cursor.execute(
             "create table if not exists sentences(id bigserial primary key,"
             "time timestamp default(now() at time zone 'utc') not null,subject bigint not null,"
-            "predicate bigint not null,actual boolean default(true) not null,"
-            "foreign key(predicate) references predicates(id))",
+            "predicate bigint not null,actual boolean default(true) not null)",
             (),
         )
         cursor.execute("create index if not exists sentences_time on sentences(time)", ())
