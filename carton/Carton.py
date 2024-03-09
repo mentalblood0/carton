@@ -1,4 +1,5 @@
 import dataclasses
+import itertools
 import operator
 import typing
 
@@ -21,12 +22,12 @@ class Carton:
 
     def insert(
         self,
-        packages: typing.Iterable[typing.Tuple[typing.Union[int, None], typing.Dict[str, typing.Union[str, None]]]],
+        sentences: typing.Iterable[typing.Tuple[typing.Union[int, None], typing.Dict[str, typing.Union[str, None]]]],
     ):
         cursor = self.db.cursor()
         insert_buf = []
         update_buf = []
-        for p in filter(operator.itemgetter(1), packages):
+        for p in filter(operator.itemgetter(1), sentences):
             if p[0] is not None:
                 update_buf.extend((p[0], f"{self.predicate(k, None)}%") for k in p[1])
                 insert_buf.extend((p[0], self.key_id(self.predicate(k, v))) for k, v in p[1].items())
@@ -60,13 +61,15 @@ class Carton:
             (self.key_id(self.predicate(key, value)),),
         ):
             yield dict(
-                [
-                    self.key_value(predicate)
-                    for (predicate,) in self.db.cursor().execute(
-                        "select p.predicate from sentences as s join predicates as p "
-                        "on s.predicate=p.id and s.actual=true and s.subject=?",
-                        (subject,),
+                list(
+                    itertools.starmap(
+                        self.key_value,
+                        self.db.cursor().execute(
+                            "select p.predicate from sentences as s join predicates as p "
+                            "on s.predicate=p.id and s.actual=true and s.subject=?",
+                            (subject,),
+                        ),
                     )
-                ]
-                + [("package", subject)]
+                )
+                + [("subject", subject)]
             )
