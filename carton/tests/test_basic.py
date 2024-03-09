@@ -110,10 +110,6 @@ def test_insert_null(carton: Carton):
 def test_new(carton: Carton):
     carton.insert([(0, {"a": "b"})])
     carton.insert([(0, {"a": "c"})])
-    for row in carton.db.cursor().execute(f"select * from sentences"):
-        print(row)
-    for row in carton.db.cursor().execute(f"select * from predicates"):
-        print(row)
     assert not list(carton.select("a", "b"))
 
 
