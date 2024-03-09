@@ -14,7 +14,9 @@
 
 ## Basic concepts
 
-It uses two tables:
+Given predicate of form `key[=value]` can be applied to given subject, softly overriding previous predicate of form `key[=old]`
+
+There is two tables:
 
 `sentences`:
 
@@ -37,19 +39,15 @@ with indexes on
 
 with index on `predicate`
 
-Predicates are of form `key[=value]`
+`select` operation implemented as generator taking `predicate` and returning all corresponding subjects actual properties
 
-So `select` operation implemented as taking `predicate` and returning all corresponding subjects actual properties
-
-`select` method is implemented as generator avoiding excessive memory usage and thick queries
-
-There is no need to generate subject identifier `subject` as it taken to be `COALESCE((SELECT MAX(subject) FROM sentences), -1) + 1` by default
+Subject identifier `subject` taken to be `COALESCE((SELECT MAX(subject) FROM sentences), -1) + 1` by default
 
 ## Concrete RDB types
 
 ### SQLite
 
-#### `sentences`
+#### sentences
 
 | name      | type                                       |
 | --------- | ------------------------------------------ |
@@ -59,7 +57,7 @@ There is no need to generate subject identifier `subject` as it taken to be `COA
 | predicate | integer not null                           |
 | actual    | integer default(1) not null                |
 
-#### `predicates`
+#### predicates
 
 | name      | types                             |
 | --------- | --------------------------------- |
@@ -68,7 +66,7 @@ There is no need to generate subject identifier `subject` as it taken to be `COA
 
 ### PostgreSQL
 
-#### `sentences`
+#### sentences
 
 | name      | type                                                 |
 | --------- | ---------------------------------------------------- |
@@ -78,9 +76,9 @@ There is no need to generate subject identifier `subject` as it taken to be `COA
 | predicate | bigint not null                                      |
 | actual    | boolean default(true) not null                       |
 
-#### `predicates`
+#### predicates
 
-| name      | types                 |
+| name      | type                  |
 | --------- | --------------------- |
 | id        | bigserial primary key |
 | predicate | text unique           |
