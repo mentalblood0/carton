@@ -16,53 +16,71 @@
 
 It uses two tables:
 
-Main one:
+`sentences`:
 
 - `id` is just autoincrementing primary key
 - `time` is date and time when row was added
-- `package` is identifier of package
-- `key`
-- `value`
-- `actual` is boolean indicator of value actuality
+- `subject` is subject identifier
+- `predicate` is predicate applied to subject at given time
+- `actual` is boolean indicator of predicate actuality
 
 with indexes on
 
 - `time`
-- `key`, `value` where `actual` is `true`
-- `package`, `key`, `value`
+- `predicate` where `actual` is `true`
+- `subject`, `actual`
 
-Additional one used for keys dynamic enum implementation:
+`predicates`:
 
 - `id` is just autoincrementing primary key
-- `key` is explicit key representation
+- `predicate` is explicit predicate representation
 
-with index on `key`
+with index on `predicate`
 
-So `select` operation implemented as taking `key` and `value` and returning all corresponding packages actual properties
+Predicates are of form `key[=value]`
 
-## Some implementation details
+So `select` operation implemented as taking `predicate` and returning all corresponding subjects actual properties
 
 `select` method is implemented as generator avoiding excessive memory usage and thick queries
 
-`insert` method uses `N + 2` `execute` related calls where `N` is number of packages with no package identifier provided
-
 There is no need to generate package identifier `package` as it taken to be `COALESCE((SELECT MAX(package) FROM carton), -1) + 1` by default
 
-`key` enum related transformations implemented using non-invalidating cache
+## Concrete RDB types
 
-## Compared to [conveyor](https://github.com/MentalBlood/conveyor)
+### SQLite
 
-|                                          |                           carton |                     conveyor |
-| ---------------------------------------- | -------------------------------: | ---------------------------: |
-| core classes amount                      |                                3 |                           27 |
-| storage type                             |                              RDB | RDB or files or user-defined |
-| workers concept                          |                    semi-immanent |                          yes |
-| automatic migrations                     |                       not needed |                          yes |
-| update operation                         | for boolean column `actual` only |          for all stored data |
-| delete operation                         |                               no |                          yes |
-| entity properties limit (when using RDB) |       maximum integer type value |       maximum columns amount |
-| reserving                                |                               no |                          yes |
-| logging                                  |                         immanent |          secondary, optional |
-| current time obtaining side              |                         database |                      library |
-| identifiers generation side              |                         database |                      library |
-| cross-repository transactions            |                       not needed |                          yes |
+#### `sentences`
+
+| name      | type                                       |
+| --------- | ------------------------------------------ |
+| id        | integer primary key autoincrement          |
+| time      | datetime default(datetime('now')) not null |
+| subject   | integer not null                           |
+| predicate | integer not null                           |
+| actual    | integer default(1) not null                |
+
+#### `predicates`
+
+| name      | types                             |
+| --------- | --------------------------------- |
+| id        | integer primary key autoincrement |
+| predicate | text unique                       |
+
+### PostgreSQL
+
+#### `sentences`
+
+| name      | type                                                 |
+| --------- | ---------------------------------------------------- |
+| id        | bigserial primary key                                |
+| time      | timestamp default(now() at time zone 'utc') not null |
+| subject   | bigint not null                                      |
+| predicate | bigint not null                                      |
+| actual    | boolean default(true) not null                       |
+
+#### `predicates`
+
+| name      | types                 |
+| --------- | --------------------- |
+| id        | bigserial primary key |
+| predicate | text unique           |

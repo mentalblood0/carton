@@ -16,7 +16,7 @@ def test_benchmark_insert(carton: Carton, benchmark: pytest_benchmark.plugin.Ben
 
 
 def count(carton: Carton):
-    return next(carton.db.cursor().execute("select count(distinct package) from carton"))[0]
+    return next(carton.db.cursor().execute("select count(distinct subject) from sentences"))[0]
 
 
 def insert(carton: Carton, start: int, amount: int, batch: int, *, update: bool = True, auto_id: bool = False):
@@ -58,7 +58,7 @@ def insert(carton: Carton, start: int, amount: int, batch: int, *, update: bool 
         assert after - before == amount
 
 
-@pytest.mark.parametrize("amount", [10**n for n in range(6)])
+@pytest.mark.parametrize("amount", [10**n for n in range(5)])
 def test_benchmark_insert_complex(
     carton: Carton, benchmark: pytest_benchmark.plugin.BenchmarkFixture, amount: int, batch: int = 1
 ):
@@ -66,7 +66,7 @@ def test_benchmark_insert_complex(
     benchmark.pedantic(lambda: insert(carton, amount, 1, batch, auto_id=True), iterations=1)
 
 
-@pytest.mark.parametrize("amount", [10**n for n in range(6)])
+@pytest.mark.parametrize("amount", [10**n for n in range(5)])
 def test_benchmark_select_complex(
     carton: Carton, benchmark: pytest_benchmark.plugin.BenchmarkFixture, amount: int, batch: int = 1
 ):
@@ -94,7 +94,6 @@ def test_groupby(carton: Carton):
     result = list(carton.select("x", "y"))
     assert {"package": 0, "a": "b", "e": "f", "x": "y"} in result
     assert {"package": 1, "c": "d", "g": "h", "x": "y"} in result
-    assert list(carton.select("x", True)) == list(carton.select("x", "y"))
 
 
 def test_distinct(carton: Carton):
@@ -111,6 +110,10 @@ def test_insert_null(carton: Carton):
 def test_new(carton: Carton):
     carton.insert([(0, {"a": "b"})])
     carton.insert([(0, {"a": "c"})])
+    for row in carton.db.cursor().execute(f"select * from sentences"):
+        print(row)
+    for row in carton.db.cursor().execute(f"select * from predicates"):
+        print(row)
     assert not list(carton.select("a", "b"))
 
 

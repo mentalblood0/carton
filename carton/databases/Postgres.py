@@ -30,16 +30,18 @@ class Postgres(Database):
 
     def create(self):
         cursor = self.cursor()
-        cursor.execute("create table if not exists keys(id serial primary key, key text unique)", ())
-        cursor.execute("create index if not exists keys_key on keys(key)", ())
+        cursor.execute("create table if not exists predicates(id bigserial primary key, predicate text unique)", ())
+        cursor.execute("create index if not exists predicates_predicate on predicates(predicate)", ())
         cursor.execute(
-            "create table if not exists carton(id bigserial primary key,"
-            "time timestamp default(now() at time zone 'utc') not null,package bigint not null,"
-            "key integer not null,value text,actual boolean default(true) not null,"
-            "foreign key(key) references keys(id))",
+            "create table if not exists sentences(id bigserial primary key,"
+            "time timestamp default(now() at time zone 'utc') not null,subject bigint not null,"
+            "predicate bigint not null,actual boolean default(true) not null,"
+            "foreign key(predicate) references predicates(id))",
             (),
         )
-        cursor.execute("create index if not exists carton_time on carton(time)", ())
-        cursor.execute("create index if not exists carton_actual_key_value on carton(key,value) where actual=true", ())
-        cursor.execute("create index if not exists carton_package_key_value on carton(package,key,value)", ())
+        cursor.execute("create index if not exists sentences_time on sentences(time)", ())
+        cursor.execute(
+            "create index if not exists sentences_actual_predicate on sentences(predicate) where actual=true", ()
+        )
+        cursor.execute("create index if not exists sentences_subject_actual on sentences(subject,actual)", ())
         self.commit()

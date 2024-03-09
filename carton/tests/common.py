@@ -10,7 +10,7 @@ from ..Carton import Carton
 def carton():
     db = databases.Sqlite(sqlite3.connect(":memory:"))
     cursor = db.cursor()
-    cursor.execute("drop table if exists carton")
-    cursor.execute("drop table if exists keys")
+    cursor.execute("drop table if exists sentences")
+    cursor.execute("drop table if exists predicates")
     db.commit()
     return Carton(db)
