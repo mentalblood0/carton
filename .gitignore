@@ -1,5 +1,6 @@
 __pycache__
 .coverage
 test_realistic.py
+test_realistic.txt
 test.db
 
