@@ -60,9 +60,12 @@ class Carton:
             raise
 
     def select(self, key: str, value: typing.Union[str, None]):
+        try:
+            _predicate_id = self.predicate_id(self.predicate(key, value), create=False)
+        except StopIteration:
+            return []
         for (subject,) in self.db.cursor().execute(
-            "select subject from sentences where actual=true and predicate=?",
-            (self.predicate_id(self.predicate(key, value), create=False),),
+            "select subject from sentences where actual=true and predicate=?", (_predicate_id,)
         ):
             yield dict(
                 list(
