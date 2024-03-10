@@ -47,25 +47,19 @@ class Carton:
         cursor.executemany("insert into sentences(subject,predicate)values(?,?)", insert_buf)
         self.db.commit()
 
-    def predicate_id(self, key: str, *, create: bool = True) -> int:
+    def predicate_id(self, key: str) -> int:
         try:
             return next(self.db.cursor().execute("select id from predicates where predicate=?", (key,)))[0]
         except StopIteration:
-            if create:
-                result = next(
-                    self.db.cursor().execute("insert into predicates(predicate)values(?)returning *", (key,))
-                )[0]
-                self.db.commit()
-                return result
-            raise
+            result = next(self.db.cursor().execute("insert into predicates(predicate)values(?)returning *", (key,)))[0]
+            self.db.commit()
+            return result
 
     def select(self, key: str, value: typing.Union[str, None]):
-        try:
-            _predicate_id = self.predicate_id(self.predicate(key, value), create=False)
-        except StopIteration:
-            return []
         for (subject,) in self.db.cursor().execute(
-            "select subject from sentences where actual=true and predicate=?", (_predicate_id,)
+            "select subject from sentences as s join predicates as p "
+            "on s.predicate=p.id and s.actual=true and p.predicate=?",
+            (self.predicate(key, value),),
         ):
             yield dict(
                 list(
