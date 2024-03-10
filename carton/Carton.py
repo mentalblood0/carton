@@ -30,15 +30,15 @@ class Carton:
         for p in filter(operator.itemgetter(1), sentences):
             if p[0] is not None:
                 update_buf.extend((p[0], f"{self.predicate(k, None)}%") for k in p[1])
-                insert_buf.extend((p[0], self.predicate_id(self.predicate(k, v))) for k, v in p[1].items())
+                insert_buf.extend((p[0], self.predicate_id(k, v)) for k, v in p[1].items())
             else:
                 k_v = list(p[1].items())
                 p_id = cursor.execute(
                     "insert into sentences(subject,predicate)"
                     "values(coalesce((select max(subject)from sentences),-1)+1,?)returning subject",
-                    (self.predicate_id(self.predicate(k_v[0][0], k_v[0][1])),),
+                    (self.predicate_id(k_v[0][0], k_v[0][1]),),
                 ).__next__()[0]
-                insert_buf.extend((p_id, self.predicate_id(self.predicate(e[0], e[1]))) for e in k_v[1:])
+                insert_buf.extend((p_id, self.predicate_id(e[0], e[1])) for e in k_v[1:])
         cursor.executemany(
             "update sentences set actual=false where subject=? "
             "and predicate in (select id from predicates where predicate like ? limit 1) and actual=true",
@@ -47,11 +47,12 @@ class Carton:
         cursor.executemany("insert into sentences(subject,predicate)values(?,?)", insert_buf)
         self.db.commit()
 
-    def predicate_id(self, key: str) -> int:
+    def predicate_id(self, key: str, value: str) -> int:
+        p = self.predicate(key, value)
         try:
-            return next(self.db.cursor().execute("select id from predicates where predicate=?", (key,)))[0]
+            return next(self.db.cursor().execute("select id from predicates where predicate=?", (p,)))[0]
         except StopIteration:
-            result = next(self.db.cursor().execute("insert into predicates(predicate)values(?)returning *", (key,)))[0]
+            result = next(self.db.cursor().execute("insert into predicates(predicate)values(?)returning *", (p,)))[0]
             self.db.commit()
             return result
 
