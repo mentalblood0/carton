@@ -35,7 +35,8 @@ class Sqlite(Database):
         cursor.execute("create index if not exists predicates_predicate on predicates(predicate)", ())
         cursor.execute(
             "create table if not exists sentences(id integer primary key autoincrement,"
-            "time datetime default(datetime('now')) not null,subject integer not null,"
+            "time datetime default(datetime('now')) not null,"
+            "subject integer not null default(last_insert_rowid()),"
             "predicate integer not null,actual integer default(1) not null)",
             (),
         )

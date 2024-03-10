@@ -7,19 +7,24 @@ from ..Carton import Carton
 from .common import *
 
 
-@pytest.mark.parametrize("amount", [10**n for n in range(5)])
+@pytest.mark.parametrize("amount", [10**n for n in range(6)])
 def test_benchmark_insert(carton: Carton, benchmark: pytest_benchmark.plugin.BenchmarkFixture, amount: int):
-    carton.insert((None, {"key": f"value_{i}", "a": "b", "file": f"path_{i}"}) for i in range(amount))
+    carton.insert((i, {"key": f"value_{i}", "a": "b", "file": f"path_{i}"}) for i in range(amount))
     benchmark.pedantic(
         lambda: carton.insert([(None, {"key": f"value_{amount}", "a": "b", "file": f"path_{amount}"})]), iterations=1
     )
+
+
+def test_insert_simultaneously(carton: Carton):
+    carton.insert((None, {"key": "value"}) for _ in range(2))
+    assert len(list(carton.select("key", "value"))) == 2
 
 
 def count(carton: Carton):
     return next(carton.db.cursor().execute("select count(distinct subject) from sentences"))[0]
 
 
-def insert(carton: Carton, start: int, amount: int, batch: int, *, update: bool = True, auto_id: bool = False):
+def insert(carton: Carton, start: int, amount: int, batch: int, *, update: bool = True):
     before = None
     if start + amount <= 10:
         before = count(carton)
@@ -27,7 +32,7 @@ def insert(carton: Carton, start: int, amount: int, batch: int, *, update: bool 
         carton.insert(
             [
                 (
-                    (start + i * batch + j) if not auto_id else None,
+                    start + i * batch + j,
                     {
                         "file": uuid.uuid4().hex,
                         "digest": uuid.uuid4().hex,
@@ -63,7 +68,7 @@ def test_benchmark_insert_complex(
     carton: Carton, benchmark: pytest_benchmark.plugin.BenchmarkFixture, amount: int, batch: int = 1
 ):
     insert(carton, 0, amount, batch)
-    benchmark.pedantic(lambda: insert(carton, amount, 1, batch, auto_id=True), iterations=1)
+    benchmark.pedantic(lambda: insert(carton, amount, 1, batch), iterations=1)
 
 
 @pytest.mark.parametrize("amount", [10**n for n in range(5)])
@@ -87,8 +92,8 @@ def test_present(carton: Carton):
 
 
 def test_groupby(carton: Carton):
-    carton.insert([(None, {"a": "b", "x": "y"})])
-    carton.insert([(None, {"c": "d", "x": "y"})])
+    carton.insert([(0, {"a": "b", "x": "y"})])
+    carton.insert([(1, {"c": "d", "x": "y"})])
     carton.insert([(0, {"e": "f", "x": "y"})])
     carton.insert([(1, {"g": "h", "x": "y"})])
     result = list(carton.select("x", "y"))
@@ -97,7 +102,7 @@ def test_groupby(carton: Carton):
 
 
 def test_distinct(carton: Carton):
-    carton.insert([(None, {"a": "b", "x": "y"})])
+    carton.insert([(0, {"a": "b", "x": "y"})])
     carton.insert([(0, {"a": "c", "x": "y"})])
     assert list(carton.select("x", "y")) == [{"a": "c", "x": "y", "subject": 0}]
 

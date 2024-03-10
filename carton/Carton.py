@@ -34,8 +34,7 @@ class Carton:
             else:
                 k_v = list(p[1].items())
                 p_id = cursor.execute(
-                    "insert into sentences(subject,predicate)"
-                    "values(coalesce((select max(subject)from sentences),-1)+1,?)returning subject",
+                    "insert into sentences(predicate) values(?) returning subject",
                     (self.predicate_id(k_v[0][0], k_v[0][1]),),
                 ).__next__()[0]
                 insert_buf.extend((p_id, self.predicate_id(e[0], e[1])) for e in k_v[1:])

@@ -41,21 +41,19 @@ with index on `predicate`
 
 `select` operation implemented as generator taking `predicate` and returning all corresponding subjects actual properties
 
-Subject identifier `subject` taken to be `COALESCE((SELECT MAX(subject) FROM sentences), -1) + 1` by default
-
 ## Concrete RDB types
 
 ### SQLite
 
 #### sentences
 
-| name      | type                                       |
-| --------- | ------------------------------------------ |
-| id        | integer primary key autoincrement          |
-| time      | datetime default(datetime('now')) not null |
-| subject   | integer not null                           |
-| predicate | integer not null                           |
-| actual    | integer default(1) not null                |
+| name      | type                                          |
+| --------- | --------------------------------------------- |
+| id        | integer primary key autoincrement             |
+| time      | datetime default(datetime('now')) not null    |
+| subject   | integer not null default(last_insert_rowid()) |
+| predicate | integer not null                              |
+| actual    | integer default(1) not null                   |
 
 #### predicates
 
@@ -72,7 +70,7 @@ Subject identifier `subject` taken to be `COALESCE((SELECT MAX(subject) FROM sen
 | --------- | ---------------------------------------------------- |
 | id        | bigserial primary key                                |
 | time      | timestamp default(now() at time zone 'utc') not null |
-| subject   | bigint not null                                      |
+| subject   | bigint not null default currval('sentences_id_seq')  |
 | predicate | bigint not null                                      |
 | actual    | boolean default(true) not null                       |
 
