@@ -1,9 +1,8 @@
 import dataclasses
-import itertools
-import operator
 import typing
 
 from .Database import Database
+from .Subject import Subject
 
 
 @dataclasses.dataclass(frozen=True)
@@ -20,38 +19,30 @@ class Carton:
         splitter = predicate.find("=")
         return predicate[:splitter], predicate[splitter + 1 :] or None
 
-    def insert(
-        self,
-        sentences: typing.Iterable[typing.Tuple[typing.Union[int, None], typing.Dict[str, typing.Union[str, None]]]],
-    ):
+    def insert(self, subjects: typing.Iterable[Subject]):
         cursor = self.db.cursor()
         insert_buf = []
         update_buf = []
-        for p in filter(operator.itemgetter(1), sentences):
-            if p[0] is not None:
-                update_buf.extend((p[0], f"{self.predicate(k, None)}%") for k in p[1])
-                insert_buf.extend((p[0], self.predicate_id(k, v)) for k, v in p[1].items())
-            else:
-                k_v = list(p[1].items())
-                p_id = cursor.execute(
-                    "insert into sentences(predicate) values(?) returning subject",
-                    (self.predicate_id(k_v[0][0], k_v[0][1]),),
+        for s in subjects:
+            update_buf.extend((r[0],) for r in s.update.values())
+            create = list(s.create.items())
+            subject_id = s.id
+            if subject_id is None:
+                subject_id = cursor.execute(
+                    "insert into sentences(predicate) values(?) returning subject", (self.predicate_id(*create.pop(0)),)
                 ).__next__()[0]
-                insert_buf.extend((p_id, self.predicate_id(e[0], e[1])) for e in k_v[1:])
-        cursor.executemany(
-            "update sentences set actual=false where subject=? "
-            "and predicate in (select id from predicates where predicate like ? limit 1) and actual=true",
-            update_buf,
-        )
-        cursor.executemany("insert into sentences(subject,predicate)values(?,?)", insert_buf)
+            insert_buf.extend((subject_id, self.predicate_id(e[0], e[1])) for e in create)
+            insert_buf.extend((subject_id, self.predicate_id(k, r[1])) for k, r in s.update.items())
+        cursor.executemany("update sentences set actual=false where id=?", update_buf)
+        cursor.executemany("insert into sentences(subject, predicate) values(?,?)", insert_buf)
         self.db.commit()
 
-    def predicate_id(self, key: str, value: str) -> int:
+    def predicate_id(self, key: str, value: typing.Union[str, None]) -> int:
         p = self.predicate(key, value)
         try:
             return next(self.db.cursor().execute("select id from predicates where predicate=?", (p,)))[0]
         except StopIteration:
-            result = next(self.db.cursor().execute("insert into predicates(predicate)values(?)returning *", (p,)))[0]
+            result = next(self.db.cursor().execute("insert into predicates(predicate) values(?) returning id", (p,)))[0]
             self.db.commit()
             return result
 
@@ -61,16 +52,12 @@ class Carton:
             "on s.predicate=p.id and s.actual=true and p.predicate=?",
             (self.predicate(key, value),),
         ):
-            yield dict(
-                list(
-                    itertools.starmap(
-                        self.key_value,
-                        self.db.cursor().execute(
-                            "select p.predicate from sentences as s join predicates as p "
-                            "on s.predicate=p.id and s.actual=true and s.subject=?",
-                            (subject,),
-                        ),
-                    )
-                )
-                + [("subject", subject)]
-            )
+            d = {}
+            for sentence_id, predicate in self.db.cursor().execute(
+                "select s.id, p.predicate from sentences as s join predicates as p "
+                "on s.predicate=p.id and s.actual=true and s.subject=?",
+                (subject,),
+            ):
+                key, value = self.key_value(predicate)
+                d[key] = (sentence_id, value)
+            yield Subject(subject, current=d)

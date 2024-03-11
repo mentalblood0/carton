@@ -1,149 +1,86 @@
-import uuid
-
 import pytest
 import pytest_benchmark.plugin
 
 from ..Carton import Carton
+from ..Subject import Subject
 from .common import *
 
 
 @pytest.mark.parametrize("amount", [10**n for n in range(6)])
 def test_benchmark_insert(carton: Carton, benchmark: pytest_benchmark.plugin.BenchmarkFixture, amount: int):
-    carton.insert((i, {"key": f"value_{i}", "a": "b", "file": f"path_{i}"}) for i in range(amount))
+    carton.insert(Subject(i, {"key": f"value_{i}", "a": "b", "file": f"path_{i}"}) for i in range(amount))
     benchmark.pedantic(
-        lambda: carton.insert([(None, {"key": f"value_{amount}", "a": "b", "file": f"path_{amount}"})]), iterations=1
+        lambda: carton.insert([Subject(None, {"key": f"value_{amount}", "a": "b", "file": f"path_{amount}"})]),
+        iterations=1,
     )
 
 
 def test_insert_simultaneously(carton: Carton):
-    carton.insert((None, {"key": "value"}) for _ in range(2))
+    carton.insert(Subject(create={"key": "value"}) for _ in range(2))
     assert len(list(carton.select("key", "value"))) == 2
 
 
-def count(carton: Carton):
-    return next(carton.db.cursor().execute("select count(distinct subject) from sentences"))[0]
-
-
-def insert(carton: Carton, start: int, amount: int, batch: int, *, update: bool = True):
-    before = None
-    if start + amount <= 10:
-        before = count(carton)
-    for i in range(amount // batch):
-        carton.insert(
-            [
-                (
-                    start + i * batch + j,
-                    {
-                        "file": uuid.uuid4().hex,
-                        "digest": uuid.uuid4().hex,
-                        "schema": None,
-                        "sign": None,
-                        "type": None,
-                        "unique_message_id": None,
-                        "unique_message": None,
-                        "unique_lifecycle_id": None,
-                        "processor_number": None,
-                    },
-                )
-                for j in range(batch)
-            ]
-        )
-        if update:
-            carton.insert(
-                [
-                    (
-                        start + i * batch + j,
-                        {"schema": "1", "message_id": uuid.uuid4().hex, "lifecycle_id": uuid.uuid4().hex},
-                    )
-                    for j in range(batch)
-                ]
-            )
-    if before is not None:
-        after = count(carton)
-        assert after - before == amount
-
-
-@pytest.mark.parametrize("amount", [10**n for n in range(5)])
-def test_benchmark_insert_complex(
-    carton: Carton, benchmark: pytest_benchmark.plugin.BenchmarkFixture, amount: int, batch: int = 1
-):
-    insert(carton, 0, amount, batch)
-    benchmark.pedantic(lambda: insert(carton, amount, 1, batch), iterations=1)
-
-
-@pytest.mark.parametrize("amount", [10**n for n in range(5)])
-def test_benchmark_select_complex(
-    carton: Carton, benchmark: pytest_benchmark.plugin.BenchmarkFixture, amount: int, batch: int = 1
-):
-    insert(carton, 0, amount, batch)
-    insert(carton, amount, batch, batch, update=False)
-
-    def select():
-        assert len(list(carton.select("schema", None))) == batch
-
-    benchmark.pedantic(select, iterations=1)
-
-
 def test_present(carton: Carton):
-    carton.insert([(0, {"a": "b", "x": "y"})])
-    carton.insert([(1, {"a": "b", "x": "z"})])
-    assert list(carton.select("x", "y")) == [{"a": "b", "x": "y", "subject": 0}]
-    assert list(carton.select("x", "z")) == [{"a": "b", "x": "z", "subject": 1}]
-
-
-def test_groupby(carton: Carton):
-    carton.insert([(0, {"a": "b", "x": "y"})])
-    carton.insert([(1, {"c": "d", "x": "y"})])
-    carton.insert([(0, {"e": "f", "x": "y"})])
-    carton.insert([(1, {"g": "h", "x": "y"})])
-    result = list(carton.select("x", "y"))
-    assert {"subject": 0, "a": "b", "e": "f", "x": "y"} in result
-    assert {"subject": 1, "c": "d", "g": "h", "x": "y"} in result
+    carton.insert([Subject(0, {"a": "b", "x": "y"})])
+    carton.insert([Subject(1, {"a": "b", "x": "z"})])
+    l = list(carton.select("x", "y"))
+    assert len(l) == 1
+    assert l[0]["a"] == "b"
+    assert l[0]["x"] == "y"
+    l = list(carton.select("x", "z"))
+    assert len(l) == 1
+    assert l[0]["a"] == "b"
+    assert l[0]["x"] == "z"
 
 
 def test_distinct(carton: Carton):
-    carton.insert([(0, {"a": "b", "x": "y"})])
-    carton.insert([(0, {"a": "c", "x": "y"})])
-    assert list(carton.select("x", "y")) == [{"a": "c", "x": "y", "subject": 0}]
+    carton.insert([Subject(0, {"a": "b", "x": "y"})])
+    s = list(carton.select("a", "b"))[0]
+    s["a"] = "c"
+    s["x"] = "y"
+    carton.insert([s])
+    l = list(carton.select("x", "y"))
+    assert len(l) == 1
+    assert l[0].id == 0
+    assert l[0]["a"] == "c"
+    assert l[0]["x"] == "y"
 
 
 def test_insert_null(carton: Carton):
-    carton.insert([(0, {"a": None})])
-    assert list(carton.select("a", None)) == [{"subject": 0, "a": None}]
+    carton.insert([Subject(0, {"a": None})])
+    l = list(carton.select("a", None))
+    assert len(l) == 1
+    assert l[0].id == 0
+    assert l[0]["a"] is None
 
 
 def test_new(carton: Carton):
-    carton.insert([(0, {"a": "b"})])
-    carton.insert([(0, {"a": "c"})])
+    carton.insert([Subject(0, {"a": "b"})])
+    s = list(carton.select("a", "b"))[0]
+    s["a"] = "c"
+    carton.insert([s])
     assert not list(carton.select("a", "b"))
-
-
-@pytest.mark.parametrize("amount", [10**n for n in range(6)])
-def test_benchmark_select_from_many_old(
-    carton: Carton, benchmark: pytest_benchmark.plugin.BenchmarkFixture, amount: int
-):
-    old = "1"
-    new = "2"
-    carton.insert([(i, {"a": old}) for i in range(amount)])
-    carton.insert([(i, {"a": new}) for i in range(amount)])
-    carton.insert([(amount, {"a": old})])
-    benchmark.pedantic(lambda: list(carton.select("a", old)), iterations=1)
-    assert list(carton.select("a", old)) == [{"subject": amount, "a": old}]
 
 
 @pytest.mark.parametrize("amount", [10**n for n in range(5)])
 def test_benchmark_select_from_many_same_key(
     carton: Carton, benchmark: pytest_benchmark.plugin.BenchmarkFixture, amount: int
 ):
-    carton.insert((i, {"a": str(i)}) for i in range(amount))
+    carton.insert(Subject(i, {"a": str(i)}) for i in range(amount))
     benchmark.pedantic(lambda: list(carton.select("a", str(amount - 1))), iterations=1)
-    assert list(carton.select("a", str(amount - 1))) == [{"subject": amount - 1, "a": str(amount - 1)}]
+    l = list(carton.select("a", str(amount - 1)))
+    assert len(l) == 1
+    assert l[0].id == amount - 1
+    assert l[0]["a"] == str(amount - 1)
 
 
 @pytest.mark.parametrize("amount", [10**n for n in range(5)])
 def test_benchmark_select_from_many_same_value(
     carton: Carton, benchmark: pytest_benchmark.plugin.BenchmarkFixture, amount: int
 ):
-    carton.insert((i, {str(i): "a"}) for i in range(amount))
+    carton.insert(Subject(i, {str(i): "a"}) for i in range(amount))
     benchmark.pedantic(lambda: list(carton.select(str(amount - 1), "a")), iterations=1)
-    assert list(carton.select(str(amount - 1), "a")) == [{"subject": amount - 1, str(amount - 1): "a"}]
+    l = list(carton.select(str(amount - 1), "a"))
+    assert len(l) == 1
+    assert l[0].id == amount - 1
+    assert l[0][str(amount - 1)] == "a"
