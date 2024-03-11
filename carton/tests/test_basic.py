@@ -23,14 +23,14 @@ def test_insert_simultaneously(carton: Carton):
 def test_present(carton: Carton):
     carton.insert([Subject(0, {"a": "b", "x": "y"})])
     carton.insert([Subject(1, {"a": "b", "x": "z"})])
-    l = list(carton.select("x", "y"))
-    assert len(l) == 1
-    assert l[0]["a"] == "b"
-    assert l[0]["x"] == "y"
-    l = list(carton.select("x", "z"))
-    assert len(l) == 1
-    assert l[0]["a"] == "b"
-    assert l[0]["x"] == "z"
+    result = list(carton.select("x", "y"))
+    assert len(result) == 1
+    assert result[0]["a"] == "b"
+    assert result[0]["x"] == "y"
+    result = list(carton.select("x", "z"))
+    assert len(result) == 1
+    assert result[0]["a"] == "b"
+    assert result[0]["x"] == "z"
 
 
 def test_distinct(carton: Carton):
@@ -39,19 +39,19 @@ def test_distinct(carton: Carton):
     s["a"] = "c"
     s["x"] = "y"
     carton.insert([s])
-    l = list(carton.select("x", "y"))
-    assert len(l) == 1
-    assert l[0].id == 0
-    assert l[0]["a"] == "c"
-    assert l[0]["x"] == "y"
+    result = list(carton.select("x", "y"))
+    assert len(result) == 1
+    assert result[0].id == 0
+    assert result[0]["a"] == "c"
+    assert result[0]["x"] == "y"
 
 
 def test_insert_null(carton: Carton):
     carton.insert([Subject(0, {"a": None})])
-    l = list(carton.select("a", None))
-    assert len(l) == 1
-    assert l[0].id == 0
-    assert l[0]["a"] is None
+    result = list(carton.select("a", None))
+    assert len(result) == 1
+    assert result[0].id == 0
+    assert result[0]["a"] is None
 
 
 def test_new(carton: Carton):
@@ -68,10 +68,10 @@ def test_benchmark_select_from_many_same_key(
 ):
     carton.insert(Subject(i, {"a": str(i)}) for i in range(amount))
     benchmark.pedantic(lambda: list(carton.select("a", str(amount - 1))), iterations=1)
-    l = list(carton.select("a", str(amount - 1)))
-    assert len(l) == 1
-    assert l[0].id == amount - 1
-    assert l[0]["a"] == str(amount - 1)
+    result = list(carton.select("a", str(amount - 1)))
+    assert len(result) == 1
+    assert result[0].id == amount - 1
+    assert result[0]["a"] == str(amount - 1)
 
 
 @pytest.mark.parametrize("amount", [10**n for n in range(5)])
@@ -80,7 +80,7 @@ def test_benchmark_select_from_many_same_value(
 ):
     carton.insert(Subject(i, {str(i): "a"}) for i in range(amount))
     benchmark.pedantic(lambda: list(carton.select(str(amount - 1), "a")), iterations=1)
-    l = list(carton.select(str(amount - 1), "a"))
-    assert len(l) == 1
-    assert l[0].id == amount - 1
-    assert l[0][str(amount - 1)] == "a"
+    result = list(carton.select(str(amount - 1), "a"))
+    assert len(result) == 1
+    assert result[0].id == amount - 1
+    assert result[0][str(amount - 1)] == "a"
