@@ -8,6 +8,7 @@ from .Subject import Subject
 @dataclasses.dataclass(frozen=True)
 class Carton:
     db: Database
+    cache: typing.Dict[str, int] = dataclasses.field(default_factory=dict)
 
     def __post_init__(self):
         self.db.create()
@@ -46,12 +47,21 @@ class Carton:
             self.db.commit()
             return result
 
-    def select(self, key: str, value: typing.Union[str, None]):
-        for (subject,) in self.db.cursor().execute(
-            "select subject from sentences as s join predicates as p "
-            "on s.predicate=p.id and s.actual=true and p.predicate=?",
-            (self.predicate(key, value),),
-        ):
+    def select(self, key: str, value: typing.Union[str, None], *, cache: bool = False):
+        if cache:
+            predicate = self.predicate(key, value)
+            if predicate not in self.cache:
+                self.cache[predicate] = self.predicate_id(key, value)
+            subjects = self.db.cursor().execute(
+                "select subject from sentences where predicate=? and actual=true", (self.cache[predicate],)
+            )
+        else:
+            subjects = self.db.cursor().execute(
+                "select subject from sentences as s join predicates as p "
+                "on s.predicate=p.id and s.actual=true and p.predicate=?",
+                (self.predicate(key, value),),
+            )
+        for (subject,) in subjects:
             d = {}
             for sentence_id, predicate in self.db.cursor().execute(
                 "select s.id, p.predicate from sentences as s join predicates as p "
