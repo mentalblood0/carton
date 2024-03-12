@@ -44,5 +44,7 @@ class Sqlite(Database):
         cursor.execute(
             "create index if not exists sentences_actual_predicate on sentences(predicate) where actual=true", ()
         )
-        cursor.execute("create index if not exists sentences_subject_actual on sentences(subject,actual)", ())
+        cursor.execute(
+            "create index if not exists sentences_subject_actual on sentences(subject) where actual=true", ()
+        )
         self.commit()
