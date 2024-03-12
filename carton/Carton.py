@@ -47,6 +47,17 @@ class Carton:
             self.db.commit()
             return result
 
+    def unique(self, key: str, value: typing.Union[str, None]):
+        return (
+            self.db.cursor()
+            .execute(
+                "select count(subject)<2 from sentences as s join predicates as p "
+                "on s.predicate=p.id and s.actual=true and p.predicate=?",
+                (self.predicate(key, value),),
+            )
+            .__next__()[0]
+        )
+
     def select(self, key: str, value: typing.Union[str, None], *, cache: bool = False):
         if cache:
             predicate = self.predicate(key, value)

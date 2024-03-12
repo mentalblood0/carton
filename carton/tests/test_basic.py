@@ -20,6 +20,13 @@ def test_insert_simultaneously(carton: Carton):
     assert len(list(carton.select("key", "value"))) == 2
 
 
+def test_unique(carton: Carton):
+    carton.insert([Subject(create={"key": "value"})])
+    assert carton.unique("key", "value")
+    carton.insert([Subject(create={"key": "value"})])
+    assert not carton.unique("key", "value")
+
+
 def test_present(carton: Carton):
     carton.insert([Subject(0, {"a": "b", "x": "y"})])
     carton.insert([Subject(1, {"a": "b", "x": "z"})])
