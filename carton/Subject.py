@@ -23,3 +23,9 @@ class Subject:
             self.update[key] = (self.current[key][0], value)
         else:
             self.create[key] = value
+
+    def __or__(self, update: typing.Union[typing.Dict[str, typing.Union[str, None]], typing.Dict[str, str]]):
+        result = dataclasses.replace(self)
+        for key, value in update.items():
+            result[key] = value
+        return result
