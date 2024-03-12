@@ -30,7 +30,7 @@ class Carton:
             subject_id = s.id
             if subject_id is None:
                 subject_id = cursor.execute(
-                    "insert into sentences(predicate) values(?) returning subject", (self.predicate_id(*create.pop(0)),)
+                    "insert into sentences(predicate) values(?) returning subject", (self.predicate_id(*create.pop()),)
                 ).__next__()[0]
             insert_buf.extend((subject_id, self.predicate_id(e[0], e[1])) for e in create)
             insert_buf.extend((subject_id, self.predicate_id(k, r[1])) for k, r in s.update.items())
